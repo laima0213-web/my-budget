@@ -101,7 +101,7 @@ header.top h1 .leaf{margin-right:4px}
 .badge.n{background:var(--blue-soft);color:#3C5A74}
 
 /* ---------- 진행 막대 ---------- */
-.bar{height:6px;border-radius:99px;background:#EFEADC;overflow:hidden}
+.bar{display:block;height:6px;border-radius:99px;background:#EFEADC;overflow:hidden}
 .bar>i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--sage2),var(--sage))}
 .bar>i.over{background:linear-gradient(90deg,#E0A08F,#C9705F)}
 .bar.sm{height:4px}
@@ -120,6 +120,23 @@ header.top h1 .leaf{margin-right:4px}
 .row .meta{font-size:10.5px;color:var(--ink3);font-variant-numeric:tabular-nums;white-space:nowrap}
 .row .bar{flex:1;min-width:20px}
 .totrow{display:flex;align-items:baseline;gap:6px;padding-top:10px;margin-top:4px;border-top:1px solid var(--line);font-weight:800;font-size:13.5px}
+
+/* ---------- 요약: 분류·결제수단 누르면 내역 펼침 ---------- */
+.row.rowtap{display:block;width:100%;text-align:left;padding:9px 4px;margin:0 -4px;border-radius:10px}
+.row.rowtap:hover{background:#FAF6EC}
+.row.rowtap:active{background:#F5EFE1}
+.row.rowtap:focus-visible{outline:2px solid var(--sage2);outline-offset:1px}
+.row.rowtap .chev{flex:0 0 auto;font-size:10.5px;color:var(--ink3);line-height:1}
+.row.rowtap.open .chev{color:var(--sage)}
+.subrows{margin:2px 0 10px;padding:2px 8px 4px;border:1px solid var(--line);border-radius:13px;background:#FCFAF4}
+.subhead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:7px 2px 3px;font-size:10.5px;color:var(--ink3);font-weight:700;font-variant-numeric:tabular-nums}
+.subempty{padding:9px 2px;font-size:11.5px;color:var(--ink3)}
+.tx.sub{padding:8px 2px;gap:8px;border-bottom:1px solid #F1ECE1}
+.tx.sub:last-child{border-bottom:0}
+.tx.sub .td{flex:0 0 auto;width:38px;font-size:10.5px;color:var(--ink3);font-weight:700}
+.tx.sub .ti{font-size:12.5px}
+.tx.sub .tm{font-size:10px}
+.tx.sub .ta{font-size:12.5px}
 .totrow .amt{margin-left:auto;font-variant-numeric:tabular-nums}
 
 /* ---------- 차트 ---------- */

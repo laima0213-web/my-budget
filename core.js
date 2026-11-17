@@ -148,6 +148,36 @@ var Core = (function () {
     return { rows: rows, total: total };
   }
 
+  /* ---------- 요약 행을 눌렀을 때 펼칠 내역 (합계 함수와 똑같은 기준) ----------
+     catSummary 는 지출·할부만 합산하므로(catSummary 안의 OUTGOING), 펼친 목록도
+     지출·할부만 담아야 행 금액과 1원까지 맞아떨어집니다. 카드할인은 분류 없이
+     결제수단 쪽(methodSummary)에서 청구액에 반영되므로 여기 넣지 않아요. */
+  function byDateId(a, b) {
+    return (a.date < b.date ? -1 : a.date > b.date ? 1 : 0) || (String(a.id) < String(b.id) ? -1 : String(a.id) > String(b.id) ? 1 : 0);
+  }
+  function catTx(S, ym, name) {
+    var list = txOf(S, ym), out = [], i;
+    for (i = 0; i < list.length; i++) {
+      var t = list[i];
+      if (!OUTGOING[t.kind]) continue;                       // 지출 · 할부만
+      if ((t.cat || '(분류 없음)') !== name) continue;
+      out.push(t);
+    }
+    out.sort(byDateId);
+    return out;
+  }
+  function methodTx(S, ym, name) {
+    var list = txOf(S, ym), out = [], i;
+    for (i = 0; i < list.length; i++) {
+      var t = list[i];
+      if (!(OUTGOING[t.kind] || t.kind === '카드할인')) continue;   // 사용액 + 할인 = 청구액
+      if ((t.method || '(결제수단 없음)') !== name) continue;
+      out.push(t);
+    }
+    out.sort(byDateId);
+    return out;
+  }
+
   /* ---------- 최근 6개월 추이 ---------- */
   function trend(S, ym, n) {
     n = n || 6;
@@ -285,7 +315,8 @@ var Core = (function () {
     KINDS: KINDS, OUTGOING: OUTGOING,
     ymOf: ymOf, todayStr: todayStr, addMonths: addMonths, monthLabel: monthLabel, dayLabel: dayLabel, daysInMonth: daysInMonth,
     money: money, signed: signed, won: won, signedWon: signedWon, pct: pct, num: num, absSum: absSum,
-    txOf: txOf, stats: stats, catSummary: catSummary, methodSummary: methodSummary, trend: trend,
+    txOf: txOf, stats: stats, catSummary: catSummary, methodSummary: methodSummary,
+    catTx: catTx, methodTx: methodTx, trend: trend,
     yearTable: yearTable, yearCatTotals: yearCatTotals, yearsInData: yearsInData,
     assetMonths: assetMonths, assetRow: assetRow, assetSeries: assetSeries, latestNetWorth: latestNetWorth,
     issues: issues, fixedPlan: fixedPlan, monthRows: monthRows

@@ -164,6 +164,7 @@
   var ui = {
     tab: 'summary', ym: Core.ymOf(Core.todayStr()), year: new Date().getFullYear(),
     trendSeg: 'year', catAll: false, q: '', fKind: '', fCat: '', fMethod: '',
+    openCats: {}, openMethods: {},   // 요약에서 펼쳐 둔 분류·결제수단 (달을 바꾸면 접힘)
     cloudState: 'local', seedApplied: false, lockFail: 0, lockUntil: 0,
     skipPin: false,   // 방금 이메일+비밀번호로 직접 로그인했을 때는 PIN을 또 묻지 않아요
     pinPassed: false  // 이번에 앱을 연 뒤 PIN을 통과했는지
@@ -577,11 +578,15 @@
     catRows.forEach(function (r) {
       var meta = r.prev ? '전월 ' + Core.money(r.prev) + ' (' + Core.signed(r.diff) + ')' : '전월 —';
       if (r.useRate !== null) meta = '예산 ' + Core.money(r.budget) + ' 중 ' + Core.pct(r.useRate, 0);
-      out.push('<div class="row"><div class="l1">' +
+      var open = !!ui.openCats[r.name];
+      out.push('<button class="row rowtap' + (open ? ' open' : '') + '" data-act="sum-cat" data-cat="' + esc(r.name) + '" aria-expanded="' + (open ? 'true' : 'false') + '">' +
+        '<span class="l1">' +
         '<span class="nm">' + esc(r.name) + (r.unknown ? ' <span class="badge warn">설정에 없음</span>' : '') + '</span>' +
-        '<span class="amt num">' + Core.money(r.now) + '</span></div>' +
-        '<div class="l2">' + (r.useRate !== null ? '<div class="bar"><i class="' + (r.useRate > 1 ? 'over' : '') + '" style="width:' + Math.min(100, Math.max(2, r.useRate * 100)) + '%"></i></div>' : '') +
-        '<span class="meta">' + esc(meta) + '</span></div></div>');
+        '<span class="amt num">' + Core.money(r.now) + '</span>' +
+        '<span class="chev" aria-hidden="true">' + (open ? '▾' : '▸') + '</span></span>' +
+        '<span class="l2">' + (r.useRate !== null ? '<span class="bar"><i class="' + (r.useRate > 1 ? 'over' : '') + '" style="width:' + Math.min(100, Math.max(2, r.useRate * 100)) + '%"></i></span>' : '') +
+        '<span class="meta">' + esc(meta) + '</span></span></button>');
+      if (open) out.push(detailRows(Core.catTx(S, ym, r.name), 'cat'));
     });
     if (cats.length > 8) out.push('<button class="btn ghost sm" data-act="catall" style="margin-top:8px">' + (ui.catAll ? '접기' : '분류 ' + cats.length + '개 모두 보기') + '</button>');
     out.push('<div class="totrow"><span>지출 합계</span><span class="muted tiny">카드할인 ' + Core.signed(st.discount) + '</span><span class="amt num">' + Core.money(st.real) + '</span></div>');
@@ -594,9 +599,13 @@
     out.push('<div class="card"><h2>' + ic('card', 15) + ' 결제수단별 청구액 <span class="sub">사용액 · 할인 · 청구</span></h2><div class="rows">');
     ms.rows.forEach(function (r) {
       if (!r.used && !r.discount) return;
-      out.push('<div class="row"><div class="l1"><span class="nm">' + esc(r.name) + '</span>' +
-        '<span class="amt num">' + Core.money(r.billed) + '</span></div>' +
-        '<div class="l2"><span class="meta">사용 ' + Core.money(r.used) + (r.discount ? ' · 할인 ' + Core.signed(r.discount) : '') + '</span></div></div>');
+      var open = !!ui.openMethods[r.name];
+      out.push('<button class="row rowtap' + (open ? ' open' : '') + '" data-act="sum-method" data-method="' + esc(r.name) + '" aria-expanded="' + (open ? 'true' : 'false') + '">' +
+        '<span class="l1"><span class="nm">' + esc(r.name) + '</span>' +
+        '<span class="amt num">' + Core.money(r.billed) + '</span>' +
+        '<span class="chev" aria-hidden="true">' + (open ? '▾' : '▸') + '</span></span>' +
+        '<span class="l2"><span class="meta">사용 ' + Core.money(r.used) + (r.discount ? ' · 할인 ' + Core.signed(r.discount) : '') + '</span></span></button>');
+      if (open) out.push(detailRows(Core.methodTx(S, ym, r.name), 'method'));
     });
     out.push('<div class="totrow"><span>합계</span><span class="muted tiny">' + (ms.total.discount ? '할인 ' + Core.signed(ms.total.discount) : '') + '</span>' +
       '<span class="amt num">' + Core.money(ms.total.billed) + '</span></div></div>');
@@ -609,6 +618,47 @@
       '<div class="legend"><span><i style="background:#A9CDB4"></i>수입</span><span><i style="background:#EBD9C4"></i>실질 지출</span></div>');
     out.push('</div>');
     return out.join('');
+  }
+
+  /* 요약 행 아래에 펼칠 내역 — 날짜 · 항목 · 결제수단 · 메모 · 금액(할인은 −) */
+  function signedMoney(v) { v = Core.num(v); return (v < 0 ? '−' : '') + Core.money(Math.abs(v)); }
+  function detailRows(list, kind) {
+    var sum = 0;
+    list.forEach(function (t) { sum += Core.num(t.amount); });
+    var out = ['<div class="subrows" role="group" aria-label="' + (kind === 'method' ? '이 결제수단' : '이 분류') + ' 내역">'];
+    out.push('<div class="subhead"><span>' + list.length + '건' + (kind === 'method' && list.some(function (t) { return t.kind === '카드할인'; }) ? ' · 카드할인 포함' : '') + '</span>' +
+      '<span>합계 ' + signedMoney(sum) + '원</span></div>');
+    if (!list.length) out.push('<div class="subempty">이 달에는 내역이 없어요</div>');
+    list.forEach(function (t) {
+      var sub = [];
+      if (t.kind === '할부') sub.push('할부');
+      if (t.kind === '카드할인') sub.push('카드할인');
+      if (t.method) sub.push(t.method);
+      if (t.memo) sub.push(t.memo);
+      out.push('<button class="tx sub" data-act="txopen" data-v="' + esc(t.id) + '">' +
+        '<span class="td num">' + esc(String(t.date).slice(5, 7)) + '/' + esc(String(t.date).slice(8, 10)) + '</span>' +
+        '<span class="tb"><span class="ti">' + esc(t.item || t.cat || '(항목 없음)') + '</span>' +
+        '<span class="tm">' + esc(sub.join(' · ') || '—') + '</span></span>' +
+        '<span class="ta num">' + (t.kind === '카드할인' ? signedMoney(t.amount) : signedMoney(-Math.abs(Core.num(t.amount)))) + '</span></button>');
+    });
+    out.push('</div>');
+    return out.join('');
+  }
+
+  /* 요약 아코디언: 펼침/접힘을 기억하고, 누른 줄이 화면 밖으로 밀리지 않게 자리를 지킵니다 */
+  function toggleSumRow(key, name, act, attr) {
+    if (name == null) return;
+    var y = window.pageYOffset || window.scrollY || 0;
+    if (!ui[key]) ui[key] = {};
+    var opening = !ui[key][name];
+    if (opening) ui[key][name] = 1; else delete ui[key][name];
+    render();
+    window.scrollTo(0, y);
+    var els = $$('[data-act="' + act + '"]'), box = null;
+    for (var i = 0; i < els.length; i++) if (els[i].getAttribute(attr) === name) { box = els[i]; break; }
+    if (!box) return;
+    var rect = box.getBoundingClientRect(), limit = window.innerHeight - 76;
+    if (rect.top < 56 || (opening && rect.bottom > limit)) window.scrollTo(0, Math.max(0, y + rect.top - 62));
   }
 
   /* ---------- 차트: 월별 막대 ---------- */
@@ -1441,9 +1491,11 @@
 
   var ACT = {
     tab: function (v) { ui.tab = v; if (v === 'trend') ui.year = parseInt(ui.ym.slice(0, 4), 10); render(); },
-    mon: function (v) { ui.ym = Core.addMonths(ui.ym, parseInt(v, 10)); render(); },
-    today: function () { ui.ym = Core.ymOf(Core.todayStr()); render(); },
+    mon: function (v) { ui.ym = Core.addMonths(ui.ym, parseInt(v, 10)); ui.openCats = {}; ui.openMethods = {}; render(); },
+    today: function () { ui.ym = Core.ymOf(Core.todayStr()); ui.openCats = {}; ui.openMethods = {}; render(); },
     catall: function () { ui.catAll = !ui.catAll; render(); },
+    'sum-cat': function (v, el) { toggleSumRow('openCats', el.getAttribute('data-cat'), 'sum-cat', 'data-cat'); },
+    'sum-method': function (v, el) { toggleSumRow('openMethods', el.getAttribute('data-method'), 'sum-method', 'data-method'); },
     year: function (v) { ui.year += parseInt(v, 10); render(); },
     yearnow: function () { ui.year = new Date().getFullYear(); render(); },
     tseg: function (v) { ui.trendSeg = v; render(); },
