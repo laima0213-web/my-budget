@@ -236,6 +236,10 @@
     if (Cloud.ready) Cloud.queuePush();
     if (opts.render !== false) render();
   }
+  function saveLocal() {
+    try { localStorage.setItem(APP.LS, JSON.stringify(S)); } catch (e) { /* 저장 못 하는 환경 */ }
+    try { if (window.BroadcastChannel) { var ch = new BroadcastChannel(APP.BCAST); ch.postMessage({ t: 'patch' }); ch.close(); } } catch (e) {}
+  }
   function loadLocal() {
     try {
       var raw = localStorage.getItem(APP.LS);
@@ -301,15 +305,15 @@
             var root = snap.val();
             var localEmpty = !(S && S.tx && S.tx.length);
             if (!root) { self.pushAll(); }
-            else if (localEmpty && root.tx && root.tx.length) { S = normalize(root); save({ render: false }); }
+            else if (localEmpty && root.tx && root.tx.length) { self.applyRemote(root); }
             else if (!root.updatedAt || (S && S.updatedAt > root.updatedAt)) { self.pushAll(); }
-            else { S = normalize(root); save({ render: false }); }
+            else { self.applyRemote(root); }
             render();
             self.ref.on('value', function (sn2) {
               var r2 = sn2.val();
               if (!r2) return;
               if (r2.updatedAt && S && r2.updatedAt <= S.updatedAt) return;  // 내가 더 최신
-              S = normalize(r2); save({ render: false }); render();
+              self.applyRemote(r2); render();
             }, function () { ui.cloudState = 'offline'; });
             res(true);
           }).catch(function () { ui.cloudState = 'offline'; res(false); });
@@ -319,6 +323,14 @@
     signIn: function (email, pw) {
       return firebase.app('budget').auth().signInWithEmailAndPassword(String(email).trim(), String(pw))
         .then(function () { return Cloud.connectIfSignedIn(); });
+    },
+    /* 다른 기기(클라우드) 내용을 이 기기에 받아들일 때.
+       이때 save() 를 쓰면 updatedAt 이 새로 매겨지고 다시 클라우드로 올라가,
+       '올림 → 내려옴 → 또 올림' 이 끝없이 반복됩니다. 그래서 이 기기에만 적고 올리지 않습니다. */
+    applyRemote: function (root) {
+      S = normalize(root);
+      if (root && root.updatedAt) S.updatedAt = root.updatedAt;
+      saveLocal();
     },
     pushAll: function () {
       if (!this.ready) return;
