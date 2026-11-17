@@ -164,7 +164,9 @@
   var ui = {
     tab: 'summary', ym: Core.ymOf(Core.todayStr()), year: new Date().getFullYear(),
     trendSeg: 'year', catAll: false, q: '', fKind: '', fCat: '', fMethod: '',
-    cloudState: 'local', seedApplied: false, lockFail: 0, lockUntil: 0
+    cloudState: 'local', seedApplied: false, lockFail: 0, lockUntil: 0,
+    skipPin: false,   // 방금 이메일+비밀번호로 직접 로그인했을 때는 PIN을 또 묻지 않아요
+    pinPassed: false  // 이번에 앱을 연 뒤 PIN을 통과했는지
   };
   var memPrefs = {};
 
@@ -183,8 +185,19 @@
         assetCols: ['입출금·현금', '예금·적금', '투자(주식·펀드)', '연금', '기타 자산'],
         assetStart: Core.ymOf(Core.todayStr())
       },
-      tx: [], fixed: [], assets: {}, auth: null, updatedAt: Date.now()
+      /* updatedAt 을 0 으로 두는 이유:
+         로그인 전(빈 화면) 상태가 '지금 시각'을 들고 있으면, 클라우드보다 최신이라고 판단해
+         빈 가계부로 DB 를 덮어써 버립니다. 0 이면 절대 '내가 최신'이 되지 않아요. */
+      tx: [], fixed: [], assets: {}, auth: null, updatedAt: 0
     };
+  }
+  /* Firebase 는 배열을 키 0·1·2… 인 객체로 돌려줄 때가 있어요(중간이 비면 특히).
+     두 모양 모두 배열로 받아들입니다. */
+  function arrOf(v) {
+    if (!v) return [];
+    if (Array.isArray(v)) return v;
+    if (typeof v === 'object') return Object.keys(v).map(function (k) { return v[k]; }).filter(function (x) { return x != null; });
+    return [];
   }
   function normalize(d) {
     var base = emptyState(), out = Object.assign(base, d || {});
@@ -195,11 +208,11 @@
     out.settings.incCats = (out.settings.incCats || []).slice();
     out.settings.methods = (out.settings.methods || []).slice();
     out.settings.assetCols = (out.settings.assetCols || base.settings.assetCols).slice();
-    out.tx = (out.tx || []).map(function (t) {
+    out.tx = arrOf(out.tx).map(function (t) {
       return { id: t.id || uid(), date: t.date, kind: t.kind || '지출', cat: t.cat || '', item: t.item || '',
         amount: Core.num(t.amount), method: t.method || '', memo: t.memo || '' };
     });
-    out.fixed = (out.fixed || []).map(function (f) {
+    out.fixed = arrOf(out.fixed).map(function (f) {
       return { id: f.id || uid(), item: f.item || '', cat: f.cat || '', amount: Core.num(f.amount),
         method: f.method || '', day: f.day == null ? '' : String(f.day), memo: f.memo || '', ex: !!f.ex };
     });
@@ -271,7 +284,8 @@
     init: function () {
       var self = this;
       if (!cloudConfigured()) return Promise.resolve(false);
-      return self.loadScript(CLOUD.SDK.app).then(function () { return self.loadScript(CLOUD.SDK.auth); })
+      if (self.initing) return self.initing;
+      self.initing = self.loadScript(CLOUD.SDK.app).then(function () { return self.loadScript(CLOUD.SDK.auth); })
         .then(function () {
           /* 같은 주소(github.io)의 가족 대시보드도 이 Firebase 프로젝트를 씁니다.
              기본 앱을 함께 쓰면 두 앱이 같은 로그인 자리를 덮어써서,
@@ -285,44 +299,96 @@
         })
         .then(function () { return self.loadScript(CLOUD.SDK.db); })
         .then(function () { return self.connectIfSignedIn(); })
-        .catch(function () { ui.cloudState = 'error'; return false; });
+        .catch(function () {
+          ui.cloudState = 'error';
+          hideSplash();
+          showGate('서버에 연결하지 못했어요 · 잠시 뒤 다시 시도해 주세요');
+          return false;
+        });
+      return self.initing;
     },
+    /* 로그인 자리(Firebase auth)는 앱을 여는 동안 한 번만 지켜봅니다.
+       로그인·로그아웃이 일어나면 onUser 가 이어받아 데이터를 불러옵니다. */
     connectIfSignedIn: function () {
       var self = this;
-      return new Promise(function (res) {
-        var auth = firebase.app('budget').auth();
-        auth.onAuthStateChanged(function (u) {
-          if (!u) { ui.cloudState = 'signed-out'; res(false); return; }
-          var db = firebase.app('budget').database();
-          self.ref = db.ref(CLOUD.DB_ROOT);
-          self.ready = true; ui.cloudState = 'live';
-          try {
-            db.ref('.info/connected').on('value', function (s) { ui.cloudState = (s && s.val()) ? 'live' : 'offline'; });
-          } catch (e) {}
-          /* 처음 한 번: DB 와 이 기기 중 무엇이 최신인지 견줘 정한다.
-             (빈 기기에서 실수로 DB 를 지우지 않도록, 이 기기에 기록이 없으면 DB 를 따른다) */
-          self.ref.once('value').then(function (snap) {
-            var root = snap.val();
-            var localEmpty = !(S && S.tx && S.tx.length);
-            if (!root) { self.pushAll(); }
-            else if (localEmpty && root.tx && root.tx.length) { self.applyRemote(root); }
-            else if (!root.updatedAt || (S && S.updatedAt > root.updatedAt)) { self.pushAll(); }
-            else { self.applyRemote(root); }
-            render();
-            self.ref.on('value', function (sn2) {
-              var r2 = sn2.val();
-              if (!r2) return;
-              if (r2.updatedAt && S && r2.updatedAt <= S.updatedAt) return;  // 내가 더 최신
-              self.applyRemote(r2); render();
-            }, function () { ui.cloudState = 'offline'; });
-            res(true);
-          }).catch(function () { ui.cloudState = 'offline'; res(false); });
-        });
+      if (!cloudConfigured()) return Promise.resolve(false);
+      if (!self.watching) {
+        self.watching = true;
+        self.first = new Promise(function (res) { self.firstRes = res; });
+        firebase.app('budget').auth().onAuthStateChanged(function (u) { self.onUser(u); });
+      }
+      return self.first;
+    },
+    onUser: function (u) {
+      var self = this;
+      var done = function (ok) {
+        if (self.firstRes) { var r = self.firstRes; self.firstRes = null; r(ok); }
+      };
+      /* ① 로그인 안 된 상태 — 빈 0원 화면을 보여 주는 대신 로그인 화면을 자동으로 띄웁니다 */
+      if (!u) {
+        self.detach();
+        ui.cloudState = 'signed-out';
+        hideSplash();
+        if (cloudConfigured()) showGate('');
+        done(false);
+        return;
+      }
+      if (self.uid === u.uid && self.ref) { hideGate(); hideSplash(); done(true); return; }
+      self.uid = u.uid;
+      var db = firebase.app('budget').database();
+      self.ref = db.ref(CLOUD.DB_ROOT);
+      self.ready = true; ui.cloudState = 'live';
+      try {
+        db.ref('.info/connected').on('value', function (s) { ui.cloudState = (s && s.val()) ? 'live' : 'offline'; });
+      } catch (e) {}
+      /* ② 처음 한 번: DB 와 이 기기 중 무엇이 최신인지 견줘 정한다.
+         (빈 기기에서 실수로 DB 를 지우지 않도록, 이 기기에 기록이 없거나 updatedAt 이 0이면 DB 를 따른다) */
+      self.ref.once('value').then(function (snap) {
+        var root = snap.val();
+        var localTx = (S && S.tx) ? S.tx.length : 0;
+        var localAt = Core.num(S && S.updatedAt);
+        if (!root) { self.pushAll(); }
+        else if (!localTx || !localAt) { self.applyRemote(root); }
+        else if (!Core.num(root.updatedAt) || localAt > Core.num(root.updatedAt)) { self.pushAll(); }
+        else { self.applyRemote(root); }
+        hideGate();
+        hideSplash();
+        render();
+        if (!self.pinChecked) {
+          self.pinChecked = true;
+          if (!ui.skipPin && S.auth && S.auth.pinHash && !ui.pinPassed && !$('#lock').classList.contains('on')) showLock();
+          ui.skipPin = false;
+        }
+        if (!self.valueBound) {
+          self.valueBound = true;
+          self.ref.on('value', function (sn2) {
+            var r2 = sn2.val();
+            if (!r2) return;
+            if (r2.updatedAt && S && S.updatedAt <= r2.updatedAt) return;  // 내가 더 최신
+            self.applyRemote(r2); render();
+          }, function () { ui.cloudState = 'offline'; });
+        }
+        done(true);
+      }).catch(function () {
+        ui.cloudState = 'offline';
+        hideSplash();
+        if (!(S && S.tx && S.tx.length)) showGate('불러오지 못했어요 · 잠시 뒤 다시 시도해 주세요');
+        done(false);
       });
     },
+    detach: function () {
+      try { if (this.ref) this.ref.off(); } catch (e) {}
+      this.ref = null; this.ready = false; this.uid = null;
+      this.valueBound = false; this.pinChecked = false;
+    },
     signIn: function (email, pw) {
-      return firebase.app('budget').auth().signInWithEmailAndPassword(String(email).trim(), String(pw))
-        .then(function () { return Cloud.connectIfSignedIn(); });
+      return new Promise(function (res, rej) {
+        if (!cloudConfigured()) return rej(new Error('not-configured'));
+        var bapp = null;
+        try { bapp = firebase.app('budget'); } catch (e) { bapp = null; }
+        if (!bapp) return rej(new Error('sdk-not-ready'));
+        bapp.auth().signInWithEmailAndPassword(String(email).trim(), String(pw)).then(res, rej);
+      });
     },
     /* 다른 기기(클라우드) 내용을 이 기기에 받아들일 때.
        이때 save() 를 쓰면 updatedAt 이 새로 매겨지고 다시 클라우드로 올라가,
@@ -368,11 +434,83 @@
   function afterBoot(fresh) {
     if (booted) return; booted = true;
     bindEvents();
-    Cloud.init().then(function () { if (ui.cloudState === 'live') ui.cloudState = 'live'; });
+    /* 이미 이 폰에서 로그인했던 기기면 PIN 부터 (데이터는 그 뒤에 채워집니다) */
     if (S.auth && S.auth.pinHash) showLock();
     render();
     if (fresh && S.tx.length) toast('엑셀 가계부 ' + S.tx.length + '건을 불러왔어요');
+    if (!cloudConfigured()) { hideSplash(); return; }
+    /* 로그인 세션이 없으면 빈 0원 화면 대신 로그인 화면이 뜹니다(onUser).
+       세션이 있으면 데이터를 받는 동안 '가계부 불러오는 중…' 을 보여 줘 0원이 깜빡이지 않게 해요. */
+    showSplash('가계부 불러오는 중…');
+    Cloud.init();
+    /* 네트워크가 막히면 로딩 화면에 갇히지 않도록 15초 뒤 풀어 줍니다 */
+    setTimeout(function () {
+      if (Cloud.ready) return;
+      hideSplash();
+      if (ui.cloudState !== 'live') showGate('연결이 늦어지고 있어요 · 다시 시도해 주세요');
+    }, 15000);
   }
+
+  /* ============================================================
+     4-b. 첫 접속 로그인 화면(자동) · 불러오는 중 표시
+     ============================================================ */
+  var gateBusy = false;
+  function setGateMsg(t) { var m = $('#gateMsg'); if (m) m.textContent = t || ''; }
+  function showGate(msg) {
+    if (!cloudConfigured()) return;
+    var g = $('#gate'); if (!g) return;
+    var em = $('#gateEmail');
+    if (em && !em.value) em.value = CLOUD.ACCOUNT;
+    setGateMsg(msg || '');
+    g.hidden = false;
+    setTimeout(function () { var p = $('#gatePw'); if (p && !p.value && !p.disabled) { try { p.focus(); } catch (e) {} } }, 260);
+  }
+  function hideGate() {
+    var g = $('#gate'); if (g) g.hidden = true;
+    var p = $('#gatePw'); if (p) p.value = '';
+    setGateMsg('');
+  }
+  function gateBusySet(on) {
+    gateBusy = !!on;
+    var b = $('#gateBtn'), e = $('#gateEmail'), p = $('#gatePw');
+    if (b) { b.disabled = gateBusy; b.textContent = gateBusy ? '가계부 불러오는 중…' : '로그인'; }
+    if (e) e.disabled = gateBusy;
+    if (p) p.disabled = gateBusy;
+  }
+  function gateErr(e) {
+    var c = ((e && e.code) || '') + ' ' + ((e && e.message) || '');
+    if (c.indexOf('wrong-password') >= 0 || c.indexOf('invalid-credential') >= 0 || c.indexOf('invalid-login') >= 0) return '비밀번호가 맞지 않아요';
+    if (c.indexOf('user-not-found') >= 0) return '등록된 이메일이 아니에요';
+    if (c.indexOf('too-many-requests') >= 0) return '조금 뒤에 다시 시도해 주세요';
+    if (c.indexOf('network') >= 0) return '인터넷 연결을 확인해 주세요';
+    if (c.indexOf('sdk-not-ready') >= 0 || c.indexOf('no-firebase') >= 0) return '서버에 연결하지 못했어요 · 잠시 뒤 다시 시도해 주세요';
+    return '로그인하지 못했어요 · 다시 시도해 주세요';
+  }
+  function gateSubmit() {
+    if (gateBusy || !cloudConfigured()) return;
+    var emailEl = $('#gateEmail'), pwEl = $('#gatePw');
+    var email = (emailEl && emailEl.value ? emailEl.value : '').trim() || CLOUD.ACCOUNT;
+    var pw = pwEl ? pwEl.value : '';
+    if (!pw || pw.length < 4) { setGateMsg('비밀번호를 넣어 주세요'); if (pwEl) pwEl.focus(); return; }
+    gateBusySet(true); setGateMsg('');
+    ui.skipPin = true;
+    var ready = (window.firebase && Cloud.watching) ? Promise.resolve(true) : Cloud.init();
+    ready.then(function () { return Cloud.signIn(email, pw); })
+      .then(function () { gateBusySet(false); })
+      .catch(function (e) {
+        ui.skipPin = false;
+        gateBusySet(false);
+        hideSplash();
+        setGateMsg(gateErr(e));
+        try { if (pwEl) { pwEl.value = ''; pwEl.focus(); } } catch (err) {}
+      });
+  }
+  function showSplash(msg) {
+    var s = $('#splash'); if (!s) return;
+    var p = s.querySelector('p'); if (p && msg) p.textContent = msg;
+    s.hidden = false;
+  }
+  function hideSplash() { var s = $('#splash'); if (s) s.hidden = true; }
 
   /* ============================================================
      5. 화면 틀
@@ -1219,6 +1357,7 @@
     var digest = await pinDigest(lockPin, rec.salt || '');
     if (digest === rec.pinHash) {
       ui.lockFail = 0;
+      ui.pinPassed = true;
       $('#lock').classList.remove('on');
       $('#lock').innerHTML = '';
       lockPin = '';
@@ -1289,6 +1428,13 @@
         };
       }
     } catch (e) {}
+    /* 첫 접속 로그인 화면 */
+    var gb = $('#gateBtn');
+    if (gb) gb.addEventListener('click', function (e) { e.preventDefault(); gateSubmit(); });
+    ['#gateEmail', '#gatePw'].forEach(function (sel) {
+      var i = $(sel);
+      if (i) i.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); gateSubmit(); } });
+    });
   }
 
   var ACT = {
@@ -1499,15 +1645,15 @@
     cloudlogin: function (v, el) {
       var w = el.closest('.sheetwrap');
       var email = $('#cEmail', w).value.trim(), pw = $('#cPw', w).value;
-      Cloud.signIn(email, pw).then(function () { w.close(); toast('연결됐어요'); })
-        .catch(function (e) { toast('로그인하지 못했어요'); });
+      ui.skipPin = true;
+      Cloud.signIn(email, pw).then(function () { if (w && w.close) w.close(); hideGate(); toast('연결됐어요'); })
+        .catch(function (e) { ui.skipPin = false; toast('로그인하지 못했어요'); });
     },
     cloudsignout: function (v, el) {
       var w = el.closest('.sheetwrap');
-      if (w) w.close();
-      firebase.app('budget').auth().signOut().then(function () {
-        ui.cloudState = 'signed-out'; openCloudSheet();
-      }).catch(function () { toast('로그아웃하지 못했어요'); });
+      if (w && w.close) w.close();
+      /* 로그아웃하면 onUser 가 이어받아 로그인 화면을 다시 보여 줍니다 */
+      firebase.app('budget').auth().signOut().catch(function () { toast('로그아웃하지 못했어요'); });
     }
   };
 
@@ -1535,6 +1681,7 @@
 
   /* 검산·확인용(테스트)에서 쓸 수 있게 */
   window.__budget = { get S() { return S; }, get ui() { return ui; }, act: ACT, Core: Core, sha256Hex: sha256Hex,
-    render: render, normalize: normalize, fromSeed: fromSeed, pinDigest: pinDigest,
+    render: render, normalize: normalize, fromSeed: fromSeed, pinDigest: pinDigest, Cloud: Cloud,
+    showGate: showGate, hideGate: hideGate, showSplash: showSplash, hideSplash: hideSplash, emptyState: emptyState,
     views: { summary: viewSummary, list: viewList, trend: viewTrend, fixed: viewFixed, settings: viewSettings, bars: svgBars } };
 })();

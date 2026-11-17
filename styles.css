@@ -254,6 +254,37 @@ button.fab:active{transform:scale(.94)}
 .switch i{position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:99px;background:#fff;transition:transform .15s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .switch.on i{transform:translateX(19px)}
 
+/* ---------- 첫 접속 로그인 화면 ---------- */
+.gate{position:fixed;inset:0;z-index:96;display:flex;align-items:center;justify-content:center;padding:22px 18px;
+  background:radial-gradient(120% 70% at 50% 0%,#EAF4EC,#FBF8F1 70%);overflow:auto}
+.gate[hidden]{display:none!important}
+.gate-card{width:100%;max-width:344px;background:#FFFDFA;border:1px solid var(--line);border-radius:24px;
+  padding:22px 20px 16px;box-shadow:0 18px 44px -18px rgba(90,105,95,.45);text-align:center}
+.gate-ic{width:56px;height:56px;margin:0 auto 10px;border-radius:20px;display:grid;place-items:center;
+  background:linear-gradient(160deg,#EAF4EC,#F7E9DC);border:1px solid #E7E1D3;color:var(--sage)}
+.gate h2{margin:0;font-size:18px;font-weight:800;letter-spacing:-.4px;color:var(--ink)}
+.gate-sub{margin:6px 0 14px;font-size:12.5px;line-height:1.5;color:var(--ink3)}
+.gate-field{text-align:left;margin-top:10px}
+.gate-field label{display:block;font-size:11.5px;font-weight:800;color:var(--ink3);margin:0 0 5px 3px}
+.gate-field input{width:100%;height:46px;border:1.5px solid #E6D9C6;background:#FFFCF5;border-radius:14px;padding:0 14px;
+  font-family:inherit;font-size:15px;font-weight:700;color:var(--ink)}
+.gate-field input:focus{outline:none;border-color:var(--sage2);background:#fff}
+.gate-field input[disabled]{opacity:.6}
+.gate-msg{min-height:16px;margin-top:7px;font-size:11.5px;font-weight:800;color:var(--rose)}
+.gate-btn{width:100%;margin-top:8px;height:48px;border:0;border-radius:14px;font-family:inherit;font-size:15.5px;font-weight:800;color:#fff;
+  background:linear-gradient(160deg,var(--sage2),var(--sage));box-shadow:0 8px 18px -8px rgba(78,122,92,.75);cursor:pointer}
+.gate-btn:active{transform:scale(.98)}
+.gate-btn[disabled]{opacity:.6}
+.gate-hint{margin:10px 0 0;font-size:11px;color:#A9B4AC}
+
+/* ---------- 불러오는 중 ---------- */
+.splash{position:fixed;inset:0;z-index:88;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  background:radial-gradient(120% 70% at 50% 0%,#EAF4EC,#FBF8F1 70%)}
+.splash[hidden]{display:none!important}
+.splash p{margin:0;font-size:12.5px;font-weight:800;color:var(--ink3)}
+.splash .spin{width:30px;height:30px;border-radius:99px;border:3px solid var(--mint2);border-top-color:var(--sage);animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
 /* ---------- 잠금 화면 ---------- */
 #lock{position:fixed;inset:0;z-index:90;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;
   background:radial-gradient(120% 70% at 50% 0%,#EAF4EC,#FBF8F1 70%)}

@@ -46,6 +46,8 @@ DB_ROOT: "ledgers/41CtUwOvUPZyYcflaxJq0PiCFUx2",           // 이 경로의 ref 
 ACCOUNT: "mybudget@family.local"                            // 로그인 폼에 기본 표기
 ```
 
+- **처음 접속하면 로그인 화면이 자동으로 뜹니다** (0원 빈 가계부가 아니라). 이메일은 `mybudget@family.local` 로 미리 채워져 있고,
+  비밀번호만 넣으면 클라우드의 59건이 바로 보입니다. 그 뒤로는 새로고침해도 로그인이 유지되고, 앱을 열 때 PIN(4자리)을 물어봅니다.
 - **비밀번호는 코드에 없습니다.** 처음 한 번만 화면에서 직접 입력하면 그 기기에 기억됩니다.
 - 루트에는 `.write: false` 라서 반드시 `db.ref(DB_ROOT).update({...})` 로 저장합니다.
 - PIN 잠금은 `sha256("my-budget|v1|" + salt + "|" + PIN)` 해시만 `auth/pinHash`·`auth/salt` 로 저장합니다.

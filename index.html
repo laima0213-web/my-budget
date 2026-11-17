@@ -19,6 +19,32 @@
 </head>
 <body>
 
+<!-- ============================================================
+     첫 접속 로그인 화면 — 아무것도 누르지 않아도 자동으로 뜹니다
+     한 번 로그인하면 이 폰에서는 기억해요 (비밀번호는 코드에 없음)
+     ============================================================ -->
+<div class="gate" id="gate" hidden>
+  <div class="gate-card">
+    <div class="gate-ic"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10" width="15" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.2"/></svg></div>
+    <h2>우리집 가계부</h2>
+    <p class="gate-sub">가계부 전용 계정으로 들어가면<br>클라우드에 있는 내역을 그대로 불러와요</p>
+    <div class="gate-field">
+      <label for="gateEmail">이메일</label>
+      <input id="gateEmail" type="text" inputmode="email" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="mybudget@family.local">
+    </div>
+    <div class="gate-field">
+      <label for="gatePw">비밀번호</label>
+      <input id="gatePw" type="password" autocomplete="current-password" placeholder="비밀번호를 넣어 주세요">
+    </div>
+    <div class="gate-msg" id="gateMsg" role="alert"></div>
+    <button class="gate-btn" id="gateBtn" type="button">로그인</button>
+    <p class="gate-hint">한 번 로그인하면 이 폰에서는 기억해요</p>
+  </div>
+</div>
+
+<!-- 데이터를 받아오는 동안 0원 화면이 깜빡이지 않게 -->
+<div class="splash" id="splash"><div class="spin"></div><p>가계부 불러오는 중…</p></div>
+
 <div id="app">
   <header class="top">
     <h1><span id="appTitle">우리집 가계부</span></h1>
