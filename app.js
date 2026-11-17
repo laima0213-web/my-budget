@@ -269,8 +269,14 @@
       if (!cloudConfigured()) return Promise.resolve(false);
       return self.loadScript(CLOUD.SDK.app).then(function () { return self.loadScript(CLOUD.SDK.auth); })
         .then(function () {
-          if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(CLOUD.firebaseConfig);
-          var auth = firebase.auth();
+          /* 같은 주소(github.io)의 가족 대시보드도 이 Firebase 프로젝트를 씁니다.
+             기본 앱을 함께 쓰면 두 앱이 같은 로그인 자리를 덮어써서,
+             대시보드에 로그인된 기기에서는 가계부가 '남의 계정으로 로그인됨'이 되어 버립니다.
+             그래서 가계부는 이름이 다른(budget) 앱을 따로 만들어 로그인 자리를 분리합니다. */
+          var bapp = null;
+          (firebase.apps || []).forEach(function (a) { if (a.name === 'budget') bapp = a; });
+          if (!bapp) bapp = firebase.initializeApp(CLOUD.firebaseConfig, 'budget');
+          var auth = bapp.auth();
           return auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function () {});
         })
         .then(function () { return self.loadScript(CLOUD.SDK.db); })
@@ -280,10 +286,10 @@
     connectIfSignedIn: function () {
       var self = this;
       return new Promise(function (res) {
-        var auth = firebase.auth();
+        var auth = firebase.app('budget').auth();
         auth.onAuthStateChanged(function (u) {
           if (!u) { ui.cloudState = 'signed-out'; res(false); return; }
-          var db = firebase.database();
+          var db = firebase.app('budget').database();
           self.ref = db.ref(CLOUD.DB_ROOT);
           self.ready = true; ui.cloudState = 'live';
           try {
@@ -311,7 +317,7 @@
       });
     },
     signIn: function (email, pw) {
-      return firebase.auth().signInWithEmailAndPassword(String(email).trim(), String(pw))
+      return firebase.app('budget').auth().signInWithEmailAndPassword(String(email).trim(), String(pw))
         .then(function () { return Cloud.connectIfSignedIn(); });
     },
     pushAll: function () {
@@ -1062,7 +1068,8 @@
       html = '<div class="li"><span class="lb"><span class="nm">' + (ui.cloudState === 'live' ? '연결됨' : '연결 중…') + '</span>' +
         '<span class="sb">' + esc(CLOUD.DB_ROOT) + ' · ' + esc(CLOUD.firebaseConfig.projectId || '') + '</span></span>' +
         '<span class="rt"><span class="badge ' + (ui.cloudState === 'live' ? 'ok' : 'n') + '">' + ui.cloudState.toUpperCase() + '</span></span></div>' +
-        '<p class="hint">바꾼 내용은 자동으로 저장되고, 다른 기기의 변경도 바로 들어와요.</p>';
+        '<p class="hint">바꾼 내용은 자동으로 저장되고, 다른 기기의 변경도 바로 들어와요.</p>' +
+        '<div class="btnline"><button class="btn ghost sm" data-act="cloudsignout">다른 계정으로 로그인</button></div>';
     }
     sheet('저장 · 동기화', html);
   }
@@ -1482,6 +1489,13 @@
       var email = $('#cEmail', w).value.trim(), pw = $('#cPw', w).value;
       Cloud.signIn(email, pw).then(function () { w.close(); toast('연결됐어요'); })
         .catch(function (e) { toast('로그인하지 못했어요'); });
+    },
+    cloudsignout: function (v, el) {
+      var w = el.closest('.sheetwrap');
+      if (w) w.close();
+      firebase.app('budget').auth().signOut().then(function () {
+        ui.cloudState = 'signed-out'; openCloudSheet();
+      }).catch(function () { toast('로그아웃하지 못했어요'); });
     }
   };
 
