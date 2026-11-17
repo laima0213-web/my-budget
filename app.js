@@ -364,7 +364,9 @@
           self.ref.on('value', function (sn2) {
             var r2 = sn2.val();
             if (!r2) return;
-            if (r2.updatedAt && S && S.updatedAt <= r2.updatedAt) return;  // 내가 더 최신
+            /* 원격이 이 기기보다 오래됐거나 같을 때만 무시하고,
+               더 새로운 원격(다른 기기에서 방금 넣은 지출)은 바로 받아옵니다 */
+            if (r2.updatedAt && S && Core.num(S.updatedAt) >= Core.num(r2.updatedAt)) return;
             self.applyRemote(r2); render();
           }, function () { ui.cloudState = 'offline'; });
         }
