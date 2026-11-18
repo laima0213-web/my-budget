@@ -633,7 +633,7 @@
       var sub = [];
       if (t.kind === '할부') sub.push('할부');
       if (t.kind === '카드할인') sub.push('카드할인');
-      if (t.method) sub.push(t.method);
+      if (t.method && t.kind !== '수입') sub.push(t.method);
       if (t.memo) sub.push(t.memo);
       out.push('<button class="tx sub" data-act="txopen" data-v="' + esc(t.id) + '">' +
         '<span class="td num">' + esc(String(t.date).slice(5, 7)) + '/' + esc(String(t.date).slice(8, 10)) + '</span>' +
@@ -768,7 +768,7 @@
         var warn = issMap[t.id] ? '<span class="warn" title="' + esc(issMap[t.id].join(', ')) + '">⚠️</span>' : '';
         var sub = [];
         if (t.cat) sub.push(t.cat);
-        if (t.method) sub.push(t.method);
+        if (t.method && t.kind !== '수입') sub.push(t.method);
         if (t.memo) sub.push(t.memo);
         var sign = (t.kind === '지출' || t.kind === '할부') ? '−' : (t.kind === '수입' ? '+' : '');
         var amtTxt = t.kind === '카드할인' ? Core.signed(t.amount) : sign + Core.money(Math.abs(t.amount));
@@ -1055,7 +1055,7 @@
       }).join('') + '<button data-act="txsave" class="wide" style="background:var(--sage);color:#fff;border-color:var(--sage);font-size:15px">저장</button>' +
       '</div></div>' +
       '<div class="field"><label>항목</label><input type="text" id="fItem" value="' + esc(d.item) + '" placeholder="예: 장보기, 주유비"></div>' +
-      '<div class="field"><label>결제수단</label><div class="chips" id="fMethod"></div></div>' +
+      '<div class="field" id="fMethodField"><label>결제수단</label><div class="chips" id="fMethod"></div></div>' +
       '<div class="field"><label>메모</label><input type="text" id="fMemo" value="' + esc(d.memo) + '" placeholder="선택 사항"></div>' +
       '<div class="btnrow">' +
       (editing ? '<button class="btn danger" data-act="txdel">삭제</button>' : '') +
@@ -1088,6 +1088,8 @@
       hint.textContent = kind === '수입' ? '수입 분류는 설정에서 관리해요' : '';
     }
     function drawMethods() {
+      var box = $('#fMethodField', w);
+      if (box) box.style.display = st.d.kind === '수입' ? 'none' : '';
       $('#fMethod', w).innerHTML = S.settings.methods.map(function (m) {
         return '<button class="chip' + (st.d.method === m ? ' on' : '') + '" data-act="methodpick" data-v="' + esc(m) + '">' + esc(m) + '</button>';
       }).join('');
@@ -1104,11 +1106,12 @@
       kind: function (v) {
         st.d.kind = v;
         if (v === '카드할인') { st.neg = true; if (!st.d.method) st.d.method = S.settings.methods[0] || ''; }
-        else if (v === '수입') st.neg = false;
+        else if (v === '수입') { st.neg = false; st.d.method = ''; }
+        else if (!st.d.method) st.d.method = S.settings.methods[0] || '';
         if (v === '이체' || v === '카드할인') st.d.cat = '';
         else if (S.settings.expCats.map(function (c) { return c.name; }).indexOf(st.d.cat) < 0 && S.settings.incCats.indexOf(st.d.cat) < 0) st.d.cat = '';
         $$('#fKind .chip', w).forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-v') === v); });
-        drawCats(); drawAmount();
+        drawCats(); drawMethods(); drawAmount();
       },
       cat: function (v) { st.d.cat = (st.d.cat === v ? '' : v); drawCats(); },
       method: function (v) { st.d.method = v; drawMethods(); },
@@ -1133,11 +1136,12 @@
         var amt = Core.num(st.amtStr);
         if (!amt) { toast('금액을 입력해 주세요'); return; }
         var amount = st.neg ? -amt : amt;
+        var method = (st.d.kind === '수입') ? '' : st.d.method;
         if (editing) {
           var i = S.tx.findIndex(function (t) { return t.id === d.id; });
-          if (i >= 0) S.tx[i] = { id: d.id, date: date, kind: st.d.kind, cat: st.d.cat, item: item, amount: amount, method: st.d.method, memo: memo };
+          if (i >= 0) S.tx[i] = { id: d.id, date: date, kind: st.d.kind, cat: st.d.cat, item: item, amount: amount, method: method, memo: memo };
         } else {
-          S.tx.push({ id: uid(), date: date, kind: st.d.kind, cat: st.d.cat, item: item, amount: amount, method: st.d.method, memo: memo });
+          S.tx.push({ id: uid(), date: date, kind: st.d.kind, cat: st.d.cat, item: item, amount: amount, method: method, memo: memo });
           ui.ym = Core.ymOf(date);
         }
         save();
@@ -1308,7 +1312,7 @@
       /* 거래내역 */
       var aoa = [['날짜', '연월', '구분', '분류', '항목', '금액', '결제수단', '메모']];
       S.tx.slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; }).forEach(function (t) {
-        aoa.push([t.date, Core.ymOf(t.date), t.kind, t.cat, t.item, Core.num(t.amount), t.method, t.memo]);
+        aoa.push([t.date, Core.ymOf(t.date), t.kind, t.cat, t.item, Core.num(t.amount), t.kind === '수입' ? '' : t.method, t.memo]);
       });
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), '거래내역');
 
