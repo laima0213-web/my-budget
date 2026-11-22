@@ -559,7 +559,7 @@
       var inner = '<span class="wk">' + w.label + '</span>' +
         '<span class="wbar"><i class="' + (top ? 'top' : '') + '" style="width:' + pct.toFixed(1) + '%"></i>' +
         (opts.avg ? '<b class="avg" style="left:' + Math.min(98, avg / scale * 100).toFixed(1) + '%"></b>' : '') + '</span>' +
-        '<span class="wamt num">' + (w.expense ? Core.money(w.expense) : '—') + '<small>원</small></span>';
+        '<span class="wamt num">' + (w.expense ? Core.money(w.expense) + '<small>원</small>' : '<span class="muted">—</span>') + '</span>';
       out.push('<button class="wrow' + (sel ? ' sel' : '') + (top ? ' top' : '') + '" data-act="' + (opts.act || 'calweek') + '" data-v="' + w.idx + '" aria-label="' + w.label + ' 지출 ' + Core.money(w.expense) + '원">' + inner + '</button>');
     });
     return out.join('');
@@ -790,7 +790,7 @@
       out.push('<button class="calwk' + (ui.selWeek === w.idx ? ' sel' : '') + (w.expense >= cal.maxWeek && w.expense ? ' top' : '') + '" data-act="calweek" data-v="' + w.idx + '" aria-label="' + w.label + ' 합계 ' + Core.money(w.expense) + '원">' +
         '<span class="lb"><b>' + w.label + '</b><i>' + w.range + '</i></span>' +
         '<span class="wbar"><i style="width:' + pct.toFixed(1) + '%"></i></span>' +
-        '<span class="amt num">' + Core.money(w.expense) + '<small>원</small></span></button>');
+        '<span class="amt num">' + (w.expense ? Core.money(w.expense) + '<small>원</small>' : '<span class="muted">—</span>') + '</span></button>');
     });
     out.push('<div class="caltot"><span>이 달 합계</span><span class="num">' + Core.money(cal.totalExpense) + '원</span></div>' +
       '<p class="hint">하루 평균 ' + Core.money(cal.avgDay) + '원 · ' + cal.count + '건 · 색이 진할수록 그날 지출이 많아요</p></div>');
