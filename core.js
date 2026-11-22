@@ -290,16 +290,29 @@ var Core = (function () {
   }
 
   /* ---------- 고정비 → 이번 달 반영 대상 ---------- */
+  /* 고정비 넣기·빼기 판정
+     · dup   : 이번 달 거래내역에 이미 들어가 있음 (한 건이 두 고정비에 겹쳐 잡히지 않게 used 로 표시)
+     · zero  : 금액이 0원 이하인 고정비 — 새로 넣지 않고, 넣기/빼기 건수에도 세지 않습니다.
+               (예전에 0원으로 들어간 거래가 남아 있으면 dupTx 로 잡아 개별 빼기·전체 빼기에서 지울 수 있게 합니다)
+     · fixedId 로 넣은 거래를 가장 먼저 찾고, 없으면 예전처럼 항목명+금액으로 찾습니다. */
   function fixedPlan(S, ym) {
-    var fixed = S.fixed || [], tx = txOf(S, ym), out = [];
+    var fixed = S.fixed || [], tx = txOf(S, ym), out = [], used = {};
     for (var i = 0; i < fixed.length; i++) {
-      var f = fixed[i];
-      var dup = null;
-      for (var j = 0; j < tx.length; j++) {
-        var t = tx[j];
-        if (t.item && f.item && t.item === f.item && num(t.amount) === num(f.amount) && t.kind !== '이체') { dup = t; break; }
+      var f = fixed[i], dup = null, zero = num(f.amount) <= 0, j;
+      for (j = 0; j < tx.length; j++) {
+        var t = tx[j], tk = t.id || ('#' + j);
+        if (used[tk]) continue;
+        if (t.fixedId && f.id && t.fixedId === f.id) { dup = t; break; }
       }
-      out.push({ f: f, dup: !!dup, dupTx: dup, ex: !!f.ex });
+      if (!dup) {
+        for (j = 0; j < tx.length; j++) {
+          var t2 = tx[j], tk2 = t2.id || ('#' + j);
+          if (used[tk2]) continue;
+          if (t2.item && f.item && t2.item === f.item && num(t2.amount) === num(f.amount) && t2.kind !== '이체') { dup = t2; break; }
+        }
+      }
+      if (dup) used[dup.id || ('#' + tx.indexOf(dup))] = 1;
+      out.push({ f: f, dup: !!dup && !zero, dupTx: dup, ex: !!f.ex, zero: zero });
     }
     return out;
   }

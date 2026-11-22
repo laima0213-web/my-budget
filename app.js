@@ -80,6 +80,7 @@
     target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".7"/>',
     lock: '<rect x="4.5" y="10" width="15" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.2"/>',
     download: '<path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M4 20h16"/>',
+    upload: '<path d="M12 21V9"/><path d="M7 13l5-5 5 5"/><path d="M4 4h16"/>',
     sparkle: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M18.5 16.5l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/>',
     coin: '<circle cx="12" cy="12" r="8.5"/><path d="M9 9.5c0-1 1.3-1.8 3-1.8s3 .8 3 1.8-1.3 1.7-3 1.7-3 .8-3 1.8 1.3 1.8 3 1.8 3-.8 3-1.8"/><path d="M12 6v12"/>',
     wallet: '<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/><circle cx="17" cy="14.5" r="1.2"/>',
@@ -1067,32 +1068,51 @@
   /* ---------- 고정비 ---------- */
   function viewFixed() {
     var plan = Core.fixedPlan(S, ui.ym), out = [];
-    var sumF = 0, exN = 0, dupN = 0, addN = 0;
+    var sumF = 0, exN = 0, dupN = 0, addN = 0, zeroN = 0, zeroNo = 0;
     plan.forEach(function (p) {
       if (p.ex) { exN++; return; }
       sumF += Core.num(p.f.amount);
+      if (p.zero) { if (p.dupTx) zeroN++; else zeroNo++; return; }
       if (p.dup) dupN++; else addN++;
     });
+    var mm = ui.ym.slice(5, 7), rmN = dupN + zeroN;
     out.push('<div class="card"><h2>' + ic('repeat', 15) + ' 고정비 <span class="sub">매달 반복되는 항목</span></h2>' +
-      '<p class="hint" style="margin-top:0">한 번 적어 두면 매달 <b>이번 달 거래내역에 반영</b> 한 번으로 입력이 끝나요. 이미 넣은 달은 다시 넣지 않게 확인해요.</p>' +
+      '<p class="hint" style="margin-top:0">한 번 적어 두면 매달 <b>이번 달 거래내역에 넣기</b> 한 번으로 입력이 끝나요. 잘못 들어간 달은 <b>빼기</b>로 이번 달 거래내역에서만 되돌리고, 고정비 목록에는 그대로 남겨 둘 수 있어요.</p>' +
       '<div class="btnline"><button class="btn ghost sm" data-act="fixednew">＋ 고정비 추가</button>' +
-      (addN ? '<button class="btn sm" data-act="fixedapply">' + ic('download', 14) + ' ' + esc(ui.ym.slice(5, 7)) + '월에 ' + addN + '건 반영</button>' : '') +
+      (addN ? '<button class="btn sm" data-act="fixedapply">' + ic('download', 14) + ' ' + esc(mm) + '월에 ' + addN + '건 넣기</button>' : '') +
+      (rmN ? '<button class="btn danger-ghost sm" data-act="fixedunapply">' + ic('upload', 14) + ' ' + esc(mm) + '월에서 ' + rmN + '건 빼기</button>' : '') +
       (exN ? '<button class="btn ghost sm" data-act="fixedclear">예시 ' + exN + '개 지우기</button>' : '') +
       '</div></div>');
 
     out.push('<div class="card"><h2>목록 <span class="sub">합계 ' + Core.money(sumF) + '원 / 달</span></h2><div class="rows">');
     if (!plan.length) out.push('<div class="empty">아직 고정비가 없어요.<br>월세·통신비·구독처럼 매달 나가는 돈을 적어 두세요</div>');
     plan.forEach(function (p) {
-      var f = p.f;
-      out.push('<div class="li"><span class="tc" style="width:26px;height:26px;border-radius:9px;display:grid;place-items:center;background:var(--mint);color:var(--sage-ink);flex:0 0 auto">' + ic('repeat', 14) + '</span>' +
-        '<span class="lb"><span class="nm">' + esc(f.item || '(항목 없음)') + (f.ex ? ' <span class="badge ex">예시</span>' : '') + '</span>' +
+      var f = p.f, badge, acts = '';
+      if (p.ex) {
+        badge = '<span class="badge ex">예시</span>';
+      } else if (p.zero && p.dupTx) {
+        badge = '<span class="badge warn">0원으로 들어감</span>';
+        acts = '<button class="mini" data-act="fixedtake" data-v="' + esc(f.id) + '">빼기</button>';
+      } else if (p.zero) {
+        badge = '<span class="badge warn">금액 미입력</span>';
+      } else if (p.dup) {
+        badge = '<span class="badge ok">이번 달 들어감</span>';
+        acts = '<button class="mini del" data-act="fixedtake" data-v="' + esc(f.id) + '">빼기</button>';
+      } else {
+        badge = '<span class="badge mute">이번 달 아직</span>';
+        acts = '<button class="mini put" data-act="fixedput" data-v="' + esc(f.id) + '">넣기</button>';
+      }
+      out.push('<div class="li frow"><span class="tc" style="width:26px;height:26px;border-radius:9px;display:grid;place-items:center;background:var(--mint);color:var(--sage-ink);flex:0 0 auto">' + ic('repeat', 14) + '</span>' +
+        '<span class="lb"><span class="nm">' + esc(f.item || '(항목 없음)') + '</span>' +
         '<span class="sb">' + esc([f.cat, f.method, f.day ? f.day + '일' : '', f.memo].filter(Boolean).join(' · ')) + '</span></span>' +
         '<span class="rt num">' + Core.money(f.amount) + '</span>' +
-        '<span class="mv"><button data-act="fixededit" data-v="' + esc(f.id) + '" aria-label="수정">✎</button>' +
-        '<button data-act="fixeddel" data-v="' + esc(f.id) + '" aria-label="삭제">✕</button></span></div>');
+        '<div class="fx">' + badge + acts + '<span class="fsp"></span>' +
+        '<button class="fbtn" data-act="fixededit" data-v="' + esc(f.id) + '" aria-label="고정비 수정">✎</button>' +
+        '<button class="fbtn del" data-act="fixeddel" data-v="' + esc(f.id) + '" aria-label="고정비 목록에서 삭제">✕</button></div></div>');
     });
     out.push('</div>');
-    if (dupN) out.push('<p class="hint">이번 달에 이미 넣은 항목 ' + dupN + '개는 자동으로 건너뛰어요.</p>');
+    if (dupN) out.push('<p class="hint">이번 달에 이미 들어간 ' + dupN + '건은 다시 넣지 않고, 위의 <b>' + esc(mm) + '월에서 빼기</b>나 줄별 <b>빼기</b>로 이번 달 거래내역에서만 뺄 수 있어요.</p>');
+    if (zeroNo) out.push('<p class="hint">금액이 비어 있는 고정비 ' + zeroNo + '건은 넣기·빼기 계산에서 빠져 있어요. 금액을 적으면 함께 계산돼요.</p>');
     out.push('</div>');
     return out.join('');
   }
@@ -1793,26 +1813,64 @@
     fixededit: function (id) { var f = S.fixed.find(function (x) { return x.id === id; }); if (f) openFixedSheet(f); },
     fixeddel: function (id) {
       var f = S.fixed.find(function (x) { return x.id === id; });
-      if (!f || !window.confirm('"' + f.item + '" 고정비를 지울까요?')) return;
-      S.fixed = S.fixed.filter(function (x) { return x.id !== id; }); save(); toast('지웠어요');
+      if (!f || !window.confirm('"' + f.item + '"을(를) 고정비 목록에서 완전히 지울까요?\n(이번 달 거래내역은 그대로 남고, 목록에서만 사라져요)')) return;
+      S.fixed = S.fixed.filter(function (x) { return x.id !== id; }); save(); toast('고정비 목록에서 지웠어요');
     },
     fixedclear: function () {
       S.fixed = S.fixed.filter(function (f) { return !f.ex; }); save(); toast('예시 고정비를 지웠어요');
     },
+    fixedput: function (id) {
+      var f = S.fixed.find(function (x) { return x.id === id; });
+      if (!f) return;
+      if (Core.num(f.amount) <= 0) { toast('금액을 먼저 적어 주세요'); return; }
+      var mm = ui.ym.slice(5, 7), p = null;
+      Core.fixedPlan(S, ui.ym).forEach(function (x) { if (x.f.id === id) p = x; });
+      if (p && p.dup) { toast('이번 달엔 이미 들어가 있어요'); return; }
+      var dim = Core.daysInMonth(ui.ym), day = Math.min(dim, Math.max(1, parseInt(f.day, 10) || 1));
+      S.tx.push({ id: uid(), fixedId: f.id, date: ui.ym + '-' + (day < 10 ? '0' + day : day), kind: '지출', cat: f.cat,
+        item: f.item, amount: Core.num(f.amount), method: f.method, memo: f.memo || '고정비' });
+      save(); toast((f.item || '고정비') + ' ' + Core.money(f.amount) + '원을 ' + mm + '월에 넣었어요');
+    },
+    fixedtake: function (id) {
+      var mm = ui.ym.slice(5, 7), p = null;
+      Core.fixedPlan(S, ui.ym).forEach(function (x) { if (x.f.id === id) p = x; });
+      if (!p || !p.dupTx) { toast('이번 달에 들어간 항목이 아니에요'); return; }
+      var msg = p.zero
+        ? '"' + p.f.item + '"의 0원 거래를 ' + mm + '월 거래내역에서 뺄까요?'
+        : '"' + p.f.item + '"을(를) ' + mm + '월 거래내역에서 뺄까요?\n(고정비 목록에는 그대로 남아요)';
+      if (!window.confirm(msg)) return;
+      var t = p.dupTx;
+      S.tx = S.tx.filter(function (x) { return x !== t; });
+      save(); toast('1건을 ' + mm + '월에서 뺐어요');
+    },
     fixedapply: function () {
       var plan = Core.fixedPlan(S, ui.ym);
-      var adds = plan.filter(function (p) { return !p.ex && !p.dup; });
-      var dups = plan.filter(function (p) { return p.dup; }).length;
-      if (!adds.length) { toast(dups ? '이번 달엔 이미 다 넣었어요' : '반영할 고정비가 없어요'); return; }
-      if (!window.confirm(ui.ym + ' 거래내역에 ' + adds.length + '건(' + Core.money(adds.reduce(function (s, p) { return s + Core.num(p.f.amount); }, 0)) + '원)을 넣을까요?' +
-        (dups ? '\n이미 넣은 ' + dups + '건은 건너뜁니다.' : ''))) return;
+      var adds = plan.filter(function (p) { return !p.ex && !p.zero && !p.dup; });
+      var dups = plan.filter(function (p) { return !p.ex && p.dup; }).length;
+      var zeros = plan.filter(function (p) { return !p.ex && p.zero; }).length;
+      if (!adds.length) { toast(dups ? '이번 달엔 이미 다 넣었어요' : '넣을 고정비가 없어요'); return; }
+      var sum = adds.reduce(function (s, p) { return s + Core.num(p.f.amount); }, 0);
+      if (!window.confirm(ui.ym + ' 거래내역에 ' + adds.length + '건(' + Core.money(sum) + '원)을 넣을까요?' +
+        (dups ? '\n이미 넣은 ' + dups + '건은 건너뜁니다.' : '') +
+        (zeros ? '\n금액이 비어 있는 ' + zeros + '건은 빼고 넣어요.' : ''))) return;
       var dim = Core.daysInMonth(ui.ym);
       adds.forEach(function (p) {
         var f = p.f, day = Math.min(dim, Math.max(1, parseInt(f.day, 10) || 1));
-        S.tx.push({ id: uid(), date: ui.ym + '-' + (day < 10 ? '0' + day : day), kind: '지출', cat: f.cat,
+        S.tx.push({ id: uid(), fixedId: f.id, date: ui.ym + '-' + (day < 10 ? '0' + day : day), kind: '지출', cat: f.cat,
           item: f.item, amount: Core.num(f.amount), method: f.method, memo: f.memo || '고정비' });
       });
       save(); toast(adds.length + '건을 넣었어요');
+    },
+    fixedunapply: function () {
+      var plan = Core.fixedPlan(S, ui.ym), mm = ui.ym.slice(5, 7);
+      var dups = plan.filter(function (p) { return !p.ex && p.dupTx; });
+      if (!dups.length) { toast('이번 달에서 뺄 고정비가 없어요'); return; }
+      var sum = dups.reduce(function (s, p) { return s + Core.num(p.f.amount); }, 0);
+      if (!window.confirm(ui.ym + ' 거래내역에서 이번 달에 들어간 고정비 ' + dups.length + '건(' + Core.money(sum) + '원)을 뺄까요?\n(고정비 목록은 남고 이번 달 거래내역에서만 빠져요)')) return;
+      var set = dups.map(function (p) { return p.dupTx; });
+      var before = S.tx.length;
+      S.tx = S.tx.filter(function (t) { return set.indexOf(t) < 0; });
+      save(); toast((before - S.tx.length) + '건을 ' + mm + '월에서 뺐어요');
     },
     xcat: function (v, el) { var w = el.closest('.sheetwrap'); w.state.d.cat = v; w.state.d.cat = v; el.parentNode.querySelectorAll('.chip').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-v') === v); }); },
     xmethod: function (v, el) { var w = el.closest('.sheetwrap'); w.state.d.method = v; el.parentNode.querySelectorAll('.chip').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-v') === v); }); },
