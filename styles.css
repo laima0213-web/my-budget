@@ -454,3 +454,45 @@ nav.bottom .ic svg{display:block}
 /* 날짜·주 상세 카드 */
 .daycard h2{flex-wrap:wrap}
 .daycard .widebtn{margin-top:10px}
+
+/* ============================================================
+   요약 · 지출 비중 도넛 (390px 폰 기준 · 가로 스크롤 0)
+   ============================================================ */
+.donutcard .hint{margin-top:8px}
+.donutwrap{display:flex;flex-direction:column;align-items:center;gap:10px}
+.donutbox{width:176px;max-width:64%;flex:0 0 auto}
+.donutbox svg{display:block;width:100%;height:auto;overflow:visible}
+.donut .dseg{fill:none;stroke-width:15;stroke-linecap:butt}
+.donut .dctr-lb{font-size:8.5px;font-weight:800;fill:var(--ink3);font-family:inherit;letter-spacing:.2px}
+.donut .dctr-amt{font-size:12.5px;font-weight:800;fill:var(--ink);font-family:inherit;letter-spacing:-.4px;font-variant-numeric:tabular-nums}
+.dlist{display:flex;flex-direction:column;width:100%}
+.drow{display:block;width:100%;text-align:left;padding:7px 4px;margin:0 -4px;border-radius:10px;border-bottom:1px dashed #EDE7DA}
+.drow:last-child{border-bottom:0}
+.drow.static{cursor:default}
+.drow:not(.static):hover{background:#FAF6EC}
+.drow:not(.static):active{background:#F5EFE1}
+.drow:focus-visible{outline:2px solid var(--sage2);outline-offset:1px}
+.drow .dl1{display:flex;align-items:center;gap:6px}
+.drow .dot{width:9px;height:9px;border-radius:99px;flex:0 0 auto}
+.drow .nm{font-size:12.5px;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.drow .nm small{font-size:10px;font-weight:700;color:var(--ink3);margin-left:1px}
+.drow .pc{font-size:12px;font-weight:800;color:var(--sage-ink);flex:0 0 auto;min-width:46px;text-align:right;font-variant-numeric:tabular-nums}
+.drow .chev{flex:0 0 auto;width:9px;text-align:center;font-size:10px;color:var(--ink3);line-height:1}
+.drow.open .chev{color:var(--sage)}
+.drow .dl2{display:flex;align-items:center;gap:7px;margin-top:5px;padding-left:15px}
+.drow .dbar{display:block;flex:1;min-width:20px;height:6px;border-radius:99px;background:#EFEADC;overflow:hidden}
+.drow .dbar>i{display:block;height:100%;border-radius:99px;opacity:.9}
+.drow .amt{font-size:11.5px;font-weight:800;color:var(--ink2);font-variant-numeric:tabular-nums;white-space:nowrap;flex:0 0 auto}
+.donutcard .subrows{margin:6px -4px 10px}
+
+/* 지출 분류별 표의 비중 배지 · 비중 막대 */
+.row .pc{font-size:10.5px;font-weight:800;color:var(--sage-ink);background:var(--mint);border-radius:999px;
+  padding:1px 6px;flex:0 0 auto;line-height:1.5;font-variant-numeric:tabular-nums;white-space:nowrap}
+.row .pc.zero{background:#F1EDE4;color:#8A8677}
+.bar.share>i{background:linear-gradient(90deg,#CBE2D2,#8FB59B)}
+
+@media (min-width:470px){
+  .donutwrap{flex-direction:row;align-items:center;gap:14px}
+  .donutbox{width:158px;max-width:42%}
+  .dlist{flex:1;min-width:0}
+}

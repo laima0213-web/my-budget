@@ -167,7 +167,7 @@
     trendSeg: 'year', catAll: false, q: '', fKind: '', fCat: '', fMethod: '',
     listView: 'cal',   // 거래 탭 기본 화면: 'cal' 한달 달력 / 'list' 내역 목록
     selDate: '', selWeek: null,   // 달력에서 고른 날짜 · 주 (달을 바꾸면 풀림)
-    openCats: {}, openMethods: {},   // 요약에서 펼쳐 둔 분류·결제수단 (달을 바꾸면 접힘)
+    openCats: {}, openMethods: {}, openDonut: {},   // 요약에서 펼쳐 둔 분류·결제수단·도넛 분류 (달을 바꾸면 접힘)
     cloudState: 'local', seedApplied: false, lockFail: 0, lockUntil: 0,
     skipPin: false,   // 방금 이메일+비밀번호로 직접 로그인했을 때는 PIN을 또 묻지 않아요
     pinPassed: false  // 이번에 앱을 연 뒤 PIN을 통과했는지
@@ -566,6 +566,98 @@
     return out.join('');
   }
 
+  /* ---------- 지출 비중 그림 (도넛 + 순위 목록) ----------
+     금액이 있는 분류를 큰 것부터 늘어놓고, 앞 6개는 제 색으로,
+     나머지는 '기타'(그레이베이지)로 묶어 한 바퀴가 100% 가 됩니다. */
+  var DONUT_COLORS = ['#CE7B67', '#7FA98A', '#D6A94C', '#7E9FC0', '#A99BC4', '#E4A882'];
+  var DONUT_OTHER = '#C7C0AF';
+  var DONUT_TOP = 6;
+
+  function donutParts(cats) {
+    var list = [], total = 0, i, k;
+    for (i = 0; i < cats.length; i++) {
+      var now = Core.num(cats[i].now);
+      if (now > 0) { list.push({ name: cats[i].name, now: now, unknown: !!cats[i].unknown }); total += now; }
+    }
+    list.sort(function (a, b) { return b.now - a.now; });
+    var parts = [], rest = list.slice(DONUT_TOP);
+    for (k = 0; k < Math.min(DONUT_TOP, list.length); k++) {
+      parts.push({ name: list[k].name, now: list[k].now, color: DONUT_COLORS[k], unknown: list[k].unknown, other: false });
+    }
+    if (rest.length) {
+      var sum = 0;
+      for (i = 0; i < rest.length; i++) sum += rest[i].now;
+      parts.push({ name: '기타', now: sum, color: DONUT_OTHER, other: true, count: rest.length });
+    }
+    return { parts: parts, total: total, count: list.length };
+  }
+
+  /* 비중 표기 — 0원은 —, 0.1% 미만은 <0.1% (10% 이상도 18.4% 처럼 한 자리) */
+  function shareLabel(share) {
+    var p = share * 100;
+    if (!p) return '—';
+    if (p < 0.1) return '&lt;0.1%';
+    return p.toFixed(1) + '%';
+  }
+
+  function svgDonut(parts, total) {
+    var R = 46, C = 2 * Math.PI * R, gap = parts.length > 1 ? 1.7 : 0, acc = 0, segs = '', i;
+    for (i = 0; i < parts.length; i++) {
+      var len = total ? parts[i].now / total * C : 0;
+      var dash = Math.max(0, len - gap);
+      segs += '<circle class="dseg" cx="60" cy="60" r="' + R + '" stroke="' + parts[i].color + '"' +
+        ' stroke-dasharray="' + dash.toFixed(2) + ' ' + (C - dash).toFixed(2) + '"' +
+        ' stroke-dashoffset="' + (-(acc + gap / 2)).toFixed(2) + '"/>';
+      acc += len;
+    }
+    return '<svg class="donut" viewBox="0 0 120 120" role="img" aria-label="지출 비중 도넛 · 분류 합계 ' + Core.money(total) + '원">' +
+      '<g transform="rotate(-90 60 60)">' + segs + '</g>' +
+      '<text class="dctr-lb" x="60" y="52" text-anchor="middle">총 지출</text>' +
+      '<text class="dctr-amt" x="60" y="69" text-anchor="middle">' + Core.money(total) + '원</text>' +
+      '</svg>';
+  }
+
+  /* 카드 하나 — 도넛 + 순위·비중·금액 막대 목록 (줄을 누르면 그 분류 내역이 펼쳐짐) */
+  function donutCard(cats) {
+    var dp = donutParts(cats);
+    var out = ['<div class="card donutcard"><h2>' + ic('pie', 15) + ' 어디에 많이 썼을까 <span class="sub">지출 비중</span></h2>'];
+    if (!dp.total) {
+      out.push('<div class="empty">이 달 지출이 쌓이면 어디에 많이 썼는지 그림으로 보여 드려요</div></div>');
+      return { html: out.join(''), total: 0, parts: [] };
+    }
+    var maxShare = dp.parts[0].now / dp.total;
+    out.push('<div class="donutwrap"><div class="donutbox">' + svgDonut(dp.parts, dp.total) + '</div><div class="dlist">');
+    dp.parts.forEach(function (p) {
+      var share = p.now / dp.total;
+      var w = Math.max(3, share / maxShare * 100);
+      if (p.other) {
+        out.push('<div class="drow static">' +
+          '<span class="dl1"><i class="dot" style="background:' + p.color + '"></i>' +
+          '<span class="nm">기타 <small>분류 ' + p.count + '개</small></span>' +
+          '<span class="pc num">' + shareLabel(share) + '</span></span>' +
+          '<span class="dl2"><span class="dbar"><i style="width:' + w.toFixed(1) + '%;background:' + p.color + '"></i></span>' +
+          '<span class="amt num">' + Core.money(p.now) + '원</span></span></div>');
+        return;
+      }
+      var open = !!ui.openDonut[p.name];
+      out.push('<button class="drow' + (open ? ' open' : '') + '" data-act="donut-cat" data-cat="' + esc(p.name) + '" aria-expanded="' + (open ? 'true' : 'false') + '">' +
+        '<span class="dl1"><i class="dot" style="background:' + p.color + '"></i>' +
+        '<span class="nm">' + esc(p.name) + (p.unknown ? ' <span class="badge warn">설정에 없음</span>' : '') + '</span>' +
+        '<span class="pc num">' + shareLabel(share) + '</span>' +
+        '<span class="chev" aria-hidden="true">' + (open ? '▾' : '▸') + '</span></span>' +
+        '<span class="dl2"><span class="dbar"><i style="width:' + w.toFixed(1) + '%;background:' + p.color + '"></i></span>' +
+        '<span class="amt num">' + Core.money(p.now) + '원</span></span></button>');
+      if (open) out.push(detailRows(Core.catTx(S, ui.ym, p.name), 'cat'));
+    });
+    out.push('</div></div>');
+    out.push('<p class="hint">' + (dp.parts.length < dp.count
+      ? '지출이 있는 분류 ' + dp.count + '개 중 큰 ' + DONUT_TOP + '개와 기타로 나눴어요. '
+      : '지출이 있는 분류 ' + dp.count + '개를 큰 순서로 보여 드려요. ') +
+      '분류를 누르면 이 달 내역이 펼쳐져요.</p>');
+    out.push('</div>');
+    return { html: out.join(''), total: dp.total, parts: dp.parts };
+  }
+
   /* ---------- 요약 ---------- */
   function viewSummary() {
     var ym = ui.ym, st = Core.stats(S, ym), prev = Core.stats(S, Core.addMonths(ym, -1));
@@ -600,20 +692,33 @@
       '<div class="calcue-foot"><span class="tiny muted num">' + calSum.spentDays + '일 지출 · 주 평균 ' + Core.money(calSum.avgWeek) + '원</span>' +
       '<button class="chip mini gobtn" data-act="gocal">한달 달력으로 보기 ›</button></div></div>');
 
-    var cats = Core.catSummary(S, ym, { all: ui.catAll });
+    /* 🍩 어디에 많이 썼을까 — 지출 비중 도넛 + 순위 목록 */
+    var allCats = Core.catSummary(S, ym, { all: true });
+    var donut = donutCard(allCats);
+    var catTotal = donut.total;
+    out.push(donut.html);
+
+    var cats = allCats.filter(function (r) { return ui.catAll || r.now || r.prev || r.budget; });
     var catRows = cats.slice(0, ui.catAll ? 99 : 8);
     out.push('<div class="card"><h2>' + ic('food', 15) + ' 지출 분류별 <span class="sub">이번 달 · 전월 · 예산</span></h2><div class="rows">');
     if (!catRows.length) out.push('<div class="empty">이 달 지출이 아직 없어요</div>');
     catRows.forEach(function (r) {
       var meta = r.prev ? '전월 ' + Core.money(r.prev) + ' (' + Core.signed(r.diff) + ')' : '전월 —';
       if (r.useRate !== null) meta = '예산 ' + Core.money(r.budget) + ' 중 ' + Core.pct(r.useRate, 0);
+      /* 전체 지출 대비 비중 — 예산이 없어도 이 줄이 몇 % 인지 바로 읽히게 */
+      var share = catTotal ? r.now / catTotal : 0;
+      var shareW = r.now && catTotal ? Math.max(2, share * 100) : 0;
+      var bar = r.useRate !== null
+        ? '<span class="bar"><i class="' + (r.useRate > 1 ? 'over' : '') + '" style="width:' + Math.min(100, Math.max(2, r.useRate * 100)) + '%"></i></span>'
+        : (shareW ? '<span class="bar share"><i style="width:' + shareW.toFixed(1) + '%"></i></span>' : '');
       var open = !!ui.openCats[r.name];
       out.push('<button class="row rowtap' + (open ? ' open' : '') + '" data-act="sum-cat" data-cat="' + esc(r.name) + '" aria-expanded="' + (open ? 'true' : 'false') + '">' +
         '<span class="l1">' +
         '<span class="nm">' + esc(r.name) + (r.unknown ? ' <span class="badge warn">설정에 없음</span>' : '') + '</span>' +
+        '<span class="pc num' + (r.now ? '' : ' zero') + '">' + shareLabel(share) + '</span>' +
         '<span class="amt num">' + Core.money(r.now) + '</span>' +
         '<span class="chev" aria-hidden="true">' + (open ? '▾' : '▸') + '</span></span>' +
-        '<span class="l2">' + (r.useRate !== null ? '<span class="bar"><i class="' + (r.useRate > 1 ? 'over' : '') + '" style="width:' + Math.min(100, Math.max(2, r.useRate * 100)) + '%"></i></span>' : '') +
+        '<span class="l2">' + bar +
         '<span class="meta">' + esc(meta) + '</span></span></button>');
       if (open) out.push(detailRows(Core.catTx(S, ym, r.name), 'cat'));
     });
@@ -1693,8 +1798,8 @@
 
   var ACT = {
     tab: function (v) { ui.tab = v; if (v === 'trend') ui.year = parseInt(ui.ym.slice(0, 4), 10); render(); },
-    mon: function (v) { ui.ym = Core.addMonths(ui.ym, parseInt(v, 10)); ui.openCats = {}; ui.openMethods = {}; ui.selDate = ''; ui.selWeek = null; render(); },
-    today: function () { ui.ym = Core.ymOf(Core.todayStr()); ui.openCats = {}; ui.openMethods = {}; ui.selDate = ''; ui.selWeek = null; render(); },
+    mon: function (v) { ui.ym = Core.addMonths(ui.ym, parseInt(v, 10)); ui.openCats = {}; ui.openMethods = {}; ui.openDonut = {}; ui.selDate = ''; ui.selWeek = null; render(); },
+    today: function () { ui.ym = Core.ymOf(Core.todayStr()); ui.openCats = {}; ui.openMethods = {}; ui.openDonut = {}; ui.selDate = ''; ui.selWeek = null; render(); },
     /* 거래 탭: 한달 달력 ↔ 내역 목록 */
     listseg: function (v) { ui.listView = v; render(); },
     gocal: function () { ui.tab = 'list'; ui.listView = 'cal'; ui.selDate = ''; ui.selWeek = null; render(); },
@@ -1712,6 +1817,7 @@
     caladd: function (v) { openTxSheet(null, v); },
     catall: function () { ui.catAll = !ui.catAll; render(); },
     'sum-cat': function (v, el) { toggleSumRow('openCats', el.getAttribute('data-cat'), 'sum-cat', 'data-cat'); },
+    'donut-cat': function (v, el) { toggleSumRow('openDonut', el.getAttribute('data-cat'), 'donut-cat', 'data-cat'); },
     'sum-method': function (v, el) { toggleSumRow('openMethods', el.getAttribute('data-method'), 'sum-method', 'data-method'); },
     year: function (v) { ui.year += parseInt(v, 10); render(); },
     yearnow: function () { ui.year = new Date().getFullYear(); render(); },
