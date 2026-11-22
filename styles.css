@@ -412,18 +412,16 @@ nav.bottom .ic svg{display:block}
 .caldow span.sun{color:var(--rose)}
 .calweek{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .calcell{display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-height:50px;
-  padding:3px 3px 4px;border-radius:9px;background:#FFFDF8;border:1px solid #F1ECDF;
+  padding:3px 2px 4px;border-radius:9px;background:#FFFDF8;border:1px solid #F1ECDF;
   text-align:left;overflow:hidden;position:relative}
 .calcell.blank{background:none;border:0;min-height:50px}
 .calcell .dnum{font-size:10.5px;font-weight:800;color:var(--ink2);line-height:1.2}
 .calcell.sat .dnum{color:var(--blue)}
 .calcell.sun .dnum{color:var(--rose)}
-.calcell .dspend{font-size:9.5px;font-weight:800;letter-spacing:-.3px;color:#8C4A38;line-height:1.2;
+.calcell .dspend{font-size:9.5px;font-weight:800;letter-spacing:-.35px;color:#8C4A38;line-height:1.2;
   max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.calcell .dspend.long{font-size:8.5px;letter-spacing:-.6px}   /* 1,184,001 같은 7자리 이상도 한 줄에 */
 .calcell .dspend.neg{color:#3F6E93}
-.calcell .ditem{font-size:8px;line-height:1.2;color:var(--ink3);max-width:100%;overflow:hidden;
-  text-overflow:ellipsis;white-space:nowrap}
-.calcell .dinc{font-size:8px;font-weight:800;line-height:1.2;color:#3F6E93}
 .calcell.h1{background:#FDF8EE;border-color:#F3EAD8}
 .calcell.h2{background:#FBEFDF;border-color:#F3E3CE}
 .calcell.h3{background:#F9E5D3;border-color:#F1D9C2}

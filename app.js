@@ -738,16 +738,11 @@
   }
 
   /* ---------- 한달 달력 · 주간 총액 그림 ---------- */
+  /* 달력 칸 금액은 '만' 으로 줄이지 않고 정확한 숫자 그대로 (1,184,001 / −12,000) */
   function calAmt(v) {
     v = Math.round(Core.num(v));
-    var neg = v < 0;
-    v = Math.abs(v);
     if (!v) return '';
-    var s = neg ? '−' : '';
-    if (v < 10000) return s + Core.money(v);
-    var man = v / 10000;
-    if (man >= 100) return s + Math.round(man) + '만';
-    return s + man.toFixed(1).replace(/\.0$/, '') + '만';
+    return v < 0 ? '−' + Core.money(-v) : Core.money(v);
   }
   function heatLevel(exp, max) {
     if (!exp || !max) return 0;
@@ -761,14 +756,13 @@
       (c.date === today ? ' today' : '') +
       (c.dow === 0 ? ' sun' : c.dow === 6 ? ' sat' : '') +
       (ui.selDate === c.date ? ' sel' : '');
-    var low = [];
-    if (c.expense) low.push('<span class="dspend num' + (c.expense < 0 ? ' neg' : '') + '">' + calAmt(c.expense) + '</span>');
-    if (c.income) low.push('<span class="dinc num">+수입</span>');
-    else if (c.top) low.push('<span class="ditem">' + esc(c.top) + '</span>');
+    var amt = c.expense ? calAmt(c.expense) : '';
+    var digits = amt.replace(/[^0-9]/g, '').length;
+    var low = amt ? '<span class="dspend num' + (c.expense < 0 ? ' neg' : '') + (digits >= 7 ? ' long' : '') + '">' + amt + '</span>' : '';
     return '<button class="' + cls + '" data-act="calsel" data-v="' + c.date + '" aria-label="' + c.day + '일' +
       (c.expense > 0 ? ' 지출 ' + Core.money(c.expense) + '원' : c.expense < 0 ? ' 할인 ' + Core.money(-c.expense) + '원' : ' 지출 없음') +
       (c.income ? ' 수입 ' + Core.money(c.income) + '원' : '') + '">' +
-      '<span class="dnum num">' + c.day + '</span>' + low.join('') + '</button>';
+      '<span class="dnum num">' + c.day + '</span>' + low + '</button>';
   }
   function viewCalendar() {
     var ym = ui.ym, cal = Core.monthCalendar(S, ym), today = Core.todayStr();
@@ -840,14 +834,16 @@
     var w = cal.weeks.filter(function (x) { return x.idx === idx; })[0];
     if (!w) return '';
     var out = ['<div class="card daycard"><h2>' + ic('trend', 15) + ' ' + w.label + ' 내역 <span class="sub num">' +
-      esc(w.range) + ' · ' + Core.money(w.expense) + '원' + (w.income ? ' · 수입 ' + Core.money(w.income) : '') + '</span></h2>'];
+      esc(w.range) + ' · ' + (w.expense ? '지출 ' + Core.money(w.expense) + '원' : '지출 없음') + '</span></h2>'];
     var any = false;
     w.days.forEach(function (c) {
       if (!c || !c.tx.length) return;
+      var rows = c.tx.filter(function (t) { return t.kind === '카드할인' || Core.OUTGOING[t.kind]; });
+      if (!rows.length) return;
       any = true;
       out.push('<div class="daygroup" style="margin-bottom:8px"><div class="dayhead"><span>' + esc(Core.dayLabel(c.date)) + '</span>' +
-        '<span class="dsum num">' + (c.expense ? '지출 ' + Core.money(c.expense) : '') + (c.income ? (c.expense ? ' · ' : '') + '수입 ' + Core.money(c.income) : '') + '</span></div><div class="txlist">');
-      c.tx.forEach(function (t) {
+        '<span class="dsum num">' + (c.expense ? '지출 ' + Core.money(c.expense) : '지출 없음') + '</span></div><div class="txlist">');
+      rows.forEach(function (t) {
         var sub = [];
         if (t.cat) sub.push(t.cat);
         if (t.method && t.kind !== '수입') sub.push(t.method);
