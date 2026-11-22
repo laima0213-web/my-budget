@@ -1188,7 +1188,8 @@
       .map(function (o) { return o.n; });
   }
 
-  /* 다시 그릴 때 화면 위치를 지키고, 새로 펼친 카드가 화면 밖이면 살짝 내려 줍니다 */
+  /* 다시 그릴 때 화면 위치를 지키고, 새로 펼친 카드가 화면 밖이면 살짝 움직여 줍니다.
+     카드가 화면보다 길면(거래가 많은 날) 카드 제목부터 보이게 합니다. */
   function renderKeep(focusSel) {
     var y = window.pageYOffset || window.scrollY || 0;
     render();
@@ -1196,9 +1197,13 @@
     if (!focusSel) return;
     var box = $(focusSel);
     if (!box) return;
-    var r = box.getBoundingClientRect(), limit = window.innerHeight - 76;
+    var r = box.getBoundingClientRect(), limit = window.innerHeight - 76, top = 62;
+    if (r.height > limit - top) {
+      if (r.top < top || r.top > limit) window.scrollTo(0, Math.max(0, y + r.top - top));
+      return;
+    }
     if (r.bottom > limit) window.scrollTo(0, Math.max(0, y + (r.bottom - limit) + 10));
-    else if (r.top < 56) window.scrollTo(0, Math.max(0, y + r.top - 62));
+    else if (r.top < top) window.scrollTo(0, Math.max(0, y + r.top - top));
   }
 
   /* ---------- 거래 입력 ---------- */
