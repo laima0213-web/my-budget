@@ -2,7 +2,7 @@
    · 평소에는 네트워크에서 먼저 받아 늘 최신 화면을 보여 주고,
      인터넷이 없을 때만 캐시로 열어 줍니다. (버전을 올리지 않아도 수정이 바로 반영) */
 var CACHE = 'my-budget-v7';
-var ASSETS = ['./', './index.html', './styles.css', './core.js', './app.js', './manifest.json', './icon-192.png', './icon-512.png'];
+var ASSETS = ['./', './index.html', './styles.css?v=7', './core.js?v=7', './app.js?v=7', './manifest.json', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(ASSETS); }).then(function () { return self.skipWaiting(); }));
 });
