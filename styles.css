@@ -362,3 +362,84 @@ table.tbl td.cap{font-size:10px;color:var(--ink3)}
 #lock .lk-ic{color:var(--sage);line-height:0;margin-bottom:2px}
 nav.bottom .ic svg{display:block}
 .fabwrap .fab{font-weight:400}
+
+/* ============================================================
+   한달 달력 · 주별 총액 그림 (390px 폰 기준 · 가로 스크롤 0)
+   ============================================================ */
+.listseg{margin-bottom:10px}
+.listseg button{font-size:12.5px}
+
+/* ---------- 주별 막대 그림 ---------- */
+.weekchart{display:flex;flex-direction:column;gap:5px;margin:2px 0 0}
+.wrow{display:grid;grid-template-columns:30px 1fr 82px;align-items:center;gap:6px;
+  width:100%;padding:1px 0;border-radius:8px;text-align:left}
+.wrow:active{background:#FAF6EC}
+.wrow .wk{font-size:10.5px;font-weight:800;color:var(--ink2);white-space:nowrap}
+.wbar{position:relative;display:block;height:14px;border-radius:99px;background:#EFEADC;overflow:hidden}
+.wbar>i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;
+  background:linear-gradient(90deg,#B4D4BD,#6E9A7B);transition:width .22s}
+.wbar>i.top{background:linear-gradient(90deg,#ECC0AF,#C9705F)}
+.wbar>b.avg{position:absolute;top:0;bottom:0;width:0;border-left:1px dashed #C9705F99}
+.wrow .wamt{font-size:11px;font-weight:800;color:var(--ink);text-align:right;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.wrow .wamt small{font-size:9px;font-weight:700;color:var(--ink3);margin-left:1px}
+.wrow.top .wamt{color:#9E503F}
+.wrow.sel .wk{color:var(--sage-ink)}
+.wrow.sel .wbar{box-shadow:0 0 0 2px #CDE4D5}
+
+/* 요약 화면 바로가기 카드 */
+.calcue-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
+.calcue-foot .gobtn{background:var(--mint);border-color:#CDE4D5;color:var(--sage-ink);font-weight:800}
+
+/* ---------- 달력 표 ---------- */
+.calcard{padding:10px 9px 12px}
+.calcard h2{padding:0 2px}
+.caldow{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px}
+.caldow span{text-align:center;font-size:10px;font-weight:800;color:var(--ink3);padding:2px 0}
+.caldow span.sat{color:var(--blue)}
+.caldow span.sun{color:var(--rose)}
+.calweek{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.calcell{display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-height:50px;
+  padding:3px 3px 4px;border-radius:9px;background:#FFFDF8;border:1px solid #F1ECDF;
+  text-align:left;overflow:hidden;position:relative}
+.calcell.blank{background:none;border:0;min-height:50px}
+.calcell .dnum{font-size:10.5px;font-weight:800;color:var(--ink2);line-height:1.2}
+.calcell.sat .dnum{color:var(--blue)}
+.calcell.sun .dnum{color:var(--rose)}
+.calcell .dspend{font-size:9.5px;font-weight:800;letter-spacing:-.3px;color:#8C4A38;line-height:1.2;
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.calcell .ditem{font-size:8px;line-height:1.2;color:var(--ink3);max-width:100%;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.calcell .dinc{font-size:8px;font-weight:800;line-height:1.2;color:#3F6E93}
+.calcell.h1{background:#FDF8EE;border-color:#F3EAD8}
+.calcell.h2{background:#FBEFDF;border-color:#F3E3CE}
+.calcell.h3{background:#F9E5D3;border-color:#F1D9C2}
+.calcell.h4{background:#F6D9C4;border-color:#EDCBB3}
+.calcell.today{border-color:var(--sage2);box-shadow:inset 0 0 0 1px var(--sage2)}
+.calcell.today .dnum{background:var(--sage);color:#fff;border-radius:5px;padding:0 3px;margin-left:-1px}
+.calcell.sel{outline:2.5px solid var(--sage);outline-offset:1px;z-index:1}
+.calcell:active{transform:scale(.97)}
+
+/* 매 주 아래 주간 합계 띠 */
+.calwk{display:flex;align-items:center;gap:6px;width:100%;padding:3px 2px 4px;margin:1px 0 4px;
+  border-radius:8px;text-align:left}
+.calwk:active{background:#FAF6EC}
+.calwk .lb{display:flex;align-items:baseline;gap:4px;flex:0 0 auto;min-width:76px}
+.calwk .lb b{font-size:10px;font-weight:800;color:var(--ink2)}
+.calwk .lb i{font-size:8.5px;font-style:normal;color:var(--ink3);font-variant-numeric:tabular-nums}
+.calwk .wbar{flex:1;min-width:20px;height:6px}
+.calwk .wbar>i{background:linear-gradient(90deg,#CBE2D2,#8FB59B)}
+.calwk .amt{font-size:10px;font-weight:800;color:var(--ink);text-align:right;white-space:nowrap;
+  min-width:66px;font-variant-numeric:tabular-nums}
+.calwk .amt small{font-size:8.5px;color:var(--ink3);margin-left:1px}
+.calwk.top .amt{color:#9E503F}
+.calwk.top .wbar>i{background:linear-gradient(90deg,#ECC0AF,#C9705F)}
+.calwk.sel{background:#EEF6EF;box-shadow:inset 0 0 0 1px #CDE4D5}
+
+.caltot{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-top:2px;
+  padding-top:8px;border-top:1px solid var(--line);font-size:12px;font-weight:800}
+.caltot .num{font-variant-numeric:tabular-nums;color:var(--ink)}
+
+/* 날짜·주 상세 카드 */
+.daycard h2{flex-wrap:wrap}
+.daycard .widebtn{margin-top:10px}

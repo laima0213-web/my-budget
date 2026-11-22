@@ -164,6 +164,8 @@
   var ui = {
     tab: 'summary', ym: Core.ymOf(Core.todayStr()), year: new Date().getFullYear(),
     trendSeg: 'year', catAll: false, q: '', fKind: '', fCat: '', fMethod: '',
+    listView: 'cal',   // 거래 탭 기본 화면: 'cal' 한달 달력 / 'list' 내역 목록
+    selDate: '', selWeek: null,   // 달력에서 고른 날짜 · 주 (달을 바꾸면 풀림)
     openCats: {}, openMethods: {},   // 요약에서 펼쳐 둔 분류·결제수단 (달을 바꾸면 접힘)
     cloudState: 'local', seedApplied: false, lockFail: 0, lockUntil: 0,
     skipPin: false,   // 방금 이메일+비밀번호로 직접 로그인했을 때는 PIN을 또 묻지 않아요
@@ -544,6 +546,25 @@
       '<div class="cap num">' + (cap || '') + (extra || '') + '</div></div>';
   }
 
+  /* ---------- 주별 지출 막대 그림 (요약 카드·달력 카드 공용) ----------
+     막대 하나하나가 '그 주에 얼마 썼는지'를 그림으로 보여 줍니다. */
+  function weekBars(cal, opts) {
+    opts = opts || {};
+    var scale = Math.max(1, cal.maxWeek) * 1.02, avg = cal.avgWeek, out = [];
+    cal.weeks.forEach(function (w) {
+      if (w.startDay === null) return;
+      var pct = w.expense ? Math.max(4, w.expense / scale * 100) : 0;
+      var top = w.expense > 0 && w.expense >= cal.maxWeek;
+      var sel = !!opts.sel && ui.selWeek === w.idx;
+      var inner = '<span class="wk">' + w.label + '</span>' +
+        '<span class="wbar"><i class="' + (top ? 'top' : '') + '" style="width:' + pct.toFixed(1) + '%"></i>' +
+        (opts.avg ? '<b class="avg" style="left:' + Math.min(98, avg / scale * 100).toFixed(1) + '%"></b>' : '') + '</span>' +
+        '<span class="wamt num">' + (w.expense ? Core.money(w.expense) : '—') + '<small>원</small></span>';
+      out.push('<button class="wrow' + (sel ? ' sel' : '') + (top ? ' top' : '') + '" data-act="' + (opts.act || 'calweek') + '" data-v="' + w.idx + '" aria-label="' + w.label + ' 지출 ' + Core.money(w.expense) + '원">' + inner + '</button>');
+    });
+    return out.join('');
+  }
+
   /* ---------- 요약 ---------- */
   function viewSummary() {
     var ym = ui.ym, st = Core.stats(S, ym), prev = Core.stats(S, Core.addMonths(ym, -1));
@@ -570,7 +591,14 @@
         : '추이 > 자산에 잔액을 적으면 보여요'));
     out.push('</div>');
 
-    /* 분류별 */
+    /* 📅 한달 달력 · 주별 지출 그림 바로가기 (문을 한 번에 찾게) */
+    var calSum = Core.monthCalendar(S, ym);
+    out.push('<div class="card calcue">' +
+      '<h2>' + ic('coin', 15) + ' 한달 달력 · 주별 지출 그림 <span class="sub">' + esc(ym.slice(5, 7)) + '월</span></h2>' +
+      '<div class="weekchart">' + weekBars(calSum, { avg: true, act: 'gocal' }) + '</div>' +
+      '<div class="calcue-foot"><span class="tiny muted num">' + calSum.spentDays + '일 지출 · 주 평균 ' + Core.money(calSum.avgWeek) + '원</span>' +
+      '<button class="chip mini gobtn" data-act="gocal">한달 달력으로 보기 ›</button></div></div>');
+
     var cats = Core.catSummary(S, ym, { all: ui.catAll });
     var catRows = cats.slice(0, ui.catAll ? 99 : 8);
     out.push('<div class="card"><h2>' + ic('food', 15) + ' 지출 분류별 <span class="sub">이번 달 · 전월 · 예산</span></h2><div class="rows">');
@@ -700,8 +728,141 @@
     return s + String(Math.round(v));
   }
 
-  /* ---------- 거래 목록 ---------- */
+  /* ---------- 거래 탭: 한달 달력 / 내역 목록 ---------- */
   function viewList() {
+    var seg = '<div class="seg listseg">' +
+      '<button class="' + (ui.listView === 'cal' ? 'on' : '') + '" data-act="listseg" data-v="cal">📅 한달 달력</button>' +
+      '<button class="' + (ui.listView === 'list' ? 'on' : '') + '" data-act="listseg" data-v="list">📋 내역 목록</button></div>';
+    return monthBar(ui.ym) + seg + (ui.listView === 'cal' ? viewCalendar() : viewTxList());
+  }
+
+  /* ---------- 한달 달력 · 주간 총액 그림 ---------- */
+  function calAmt(v) {
+    v = Math.abs(Math.round(Core.num(v)));
+    if (!v) return '';
+    if (v < 10000) return Core.money(v);
+    var man = v / 10000;
+    if (man >= 100) return Math.round(man) + '만';
+    return man.toFixed(1).replace(/\.0$/, '') + '만';
+  }
+  function heatLevel(exp, max) {
+    if (!exp || !max) return 0;
+    var r = exp / max;
+    return r > 0.75 ? 4 : r > 0.5 ? 3 : r > 0.25 ? 2 : 1;
+  }
+  function calCell(c, cal, today) {
+    if (!c) return '<div class="calcell blank" aria-hidden="true"></div>';
+    var lv = heatLevel(c.expense, cal.maxDay);
+    var cls = 'calcell' + (lv ? ' h' + lv : '') +
+      (c.date === today ? ' today' : '') +
+      (c.dow === 0 ? ' sun' : c.dow === 6 ? ' sat' : '') +
+      (ui.selDate === c.date ? ' sel' : '');
+    var low = [];
+    if (c.expense) low.push('<span class="dspend num">' + calAmt(c.expense) + '</span>');
+    if (c.income) low.push('<span class="dinc num">+수입</span>');
+    else if (c.top) low.push('<span class="ditem">' + esc(c.top) + '</span>');
+    return '<button class="' + cls + '" data-act="calsel" data-v="' + c.date + '" aria-label="' + c.day + '일' +
+      (c.expense ? ' 지출 ' + Core.money(c.expense) + '원' : ' 지출 없음') + (c.income ? ' 수입 ' + Core.money(c.income) + '원' : '') + '">' +
+      '<span class="dnum num">' + c.day + '</span>' + low.join('') + '</button>';
+  }
+  function viewCalendar() {
+    var ym = ui.ym, cal = Core.monthCalendar(S, ym), today = Core.todayStr();
+    var out = [], DOW = ['월', '화', '수', '목', '금', '토', '일'];
+
+    /* ① 주별 지출 총액 그림 */
+    out.push('<div class="card weekcard"><h2>' + ic('chart', 15) + ' 주별 지출 그림 <span class="sub">1주~' + cal.weeks.length + '주</span></h2>' +
+      '<div class="weekchart">' + weekBars(cal, { avg: true, sel: true }) + '</div>' +
+      '<p class="hint" style="margin-top:4px">' + (cal.maxWeek ? '가장 많이 쓴 주는 <b>' + cal.maxWeekIdx + '주</b> (' + Core.money(cal.maxWeek) + '원) · 점선은 주 평균 ' + Core.money(cal.avgWeek) + '원' : '아직 지출이 없어요') + '</p></div>');
+
+    /* ② 한 달 달력 표 (월~일 · 매 주 아래 주간 합계 띠) */
+    out.push('<div class="card calcard"><h2>' + ic('receipt', 15) + ' 한 달 달력 <span class="sub">' + esc(ym.slice(0, 4)) + '년 ' + cal.month + '월</span></h2>');
+    out.push('<div class="caldow">' + DOW.map(function (d, i) {
+      return '<span class="' + (i === 5 ? 'sat' : i === 6 ? 'sun' : '') + '">' + d + '</span>';
+    }).join('') + '</div>');
+    cal.weeks.forEach(function (w) {
+      out.push('<div class="calweek">' + w.days.map(function (c) { return calCell(c, cal, today); }).join('') + '</div>');
+      if (w.startDay === null) return;
+      var pct = cal.maxWeek ? Math.max(3, w.expense / (cal.maxWeek * 1.02) * 100) : 0;
+      out.push('<button class="calwk' + (ui.selWeek === w.idx ? ' sel' : '') + (w.expense >= cal.maxWeek && w.expense ? ' top' : '') + '" data-act="calweek" data-v="' + w.idx + '" aria-label="' + w.label + ' 합계 ' + Core.money(w.expense) + '원">' +
+        '<span class="lb"><b>' + w.label + '</b><i>' + w.range + '</i></span>' +
+        '<span class="wbar"><i style="width:' + pct.toFixed(1) + '%"></i></span>' +
+        '<span class="amt num">' + Core.money(w.expense) + '<small>원</small></span></button>');
+    });
+    out.push('<div class="caltot"><span>이 달 합계</span><span class="num">' + Core.money(cal.totalExpense) + '원</span></div>' +
+      '<p class="hint">하루 평균 ' + Core.money(cal.avgDay) + '원 · ' + cal.count + '건 · 색이 진할수록 그날 지출이 많아요</p></div>');
+
+    /* ③ 고른 날짜·주 상세 */
+    if (ui.selDate) out.push(calDayCard(ui.selDate));
+    else if (ui.selWeek) out.push(calWeekCard(cal, ui.selWeek));
+    else out.push('<p class="hint" style="text-align:center;margin:2px 0 8px">날짜를 누르면 그날 내역이, 주차를 누르면 그 주 내역이 아래에 펼쳐져요</p>');
+    return out.join('');
+  }
+
+  function calDayCard(date) {
+    var txs = (S.tx || []).filter(function (t) { return t.date === date; });
+    txs.sort(function (a, b) { return String(a.id) < String(b.id) ? -1 : 1; });
+    var exp = 0, inc = 0, i;
+    for (i = 0; i < txs.length; i++) {
+      var a = Core.num(txs[i].amount);
+      if (txs[i].kind === '수입') inc += a;
+      else if (Core.OUTGOING[txs[i].kind] || txs[i].kind === '카드할인') exp += a;
+    }
+    var out = ['<div class="card daycard"><h2>' + ic('receipt', 15) + ' ' + esc(Core.dayLabel(date)) +
+      '<span class="sub num">' + (exp ? '지출 ' + Core.money(exp) : '지출 없음') + (inc ? ' · 수입 ' + Core.money(inc) : '') + '</span></h2>'];
+    if (!txs.length) out.push('<div class="empty">이날은 적은 내역이 없어요</div>');
+    else {
+      out.push('<div class="txlist">');
+      txs.forEach(function (t) {
+        var sub = [];
+        if (t.cat) sub.push(t.cat);
+        if (t.method && t.kind !== '수입') sub.push(t.method);
+        if (t.memo) sub.push(t.memo);
+        var sign = (t.kind === '지출' || t.kind === '할부') ? '−' : (t.kind === '수입' ? '+' : '');
+        var amtTxt = t.kind === '카드할인' ? Core.signed(t.amount) : sign + Core.money(Math.abs(t.amount));
+        out.push('<button class="tx k-' + esc(t.kind) + '" data-act="txopen" data-v="' + esc(t.id) + '">' +
+          '<span class="tc">' + kindIcon(t.kind, 15) + '</span>' +
+          '<span class="tb"><span class="ti">' + esc(t.item || '(항목 없음)') + '</span>' +
+          '<span class="tm">' + esc(sub.join(' · ') || t.kind) + '</span></span>' +
+          '<span class="ta num">' + amtTxt + '</span></button>');
+      });
+      out.push('</div>');
+    }
+    out.push('<button class="btn ghost sm widebtn" data-act="caladd" data-v="' + esc(date) + '">＋ 이날 거래 추가</button></div>');
+    return out.join('');
+  }
+
+  function calWeekCard(cal, idx) {
+    var w = cal.weeks.filter(function (x) { return x.idx === idx; })[0];
+    if (!w) return '';
+    var out = ['<div class="card daycard"><h2>' + ic('trend', 15) + ' ' + w.label + ' 내역 <span class="sub num">' +
+      esc(w.range) + ' · ' + Core.money(w.expense) + '원' + (w.income ? ' · 수입 ' + Core.money(w.income) : '') + '</span></h2>'];
+    var any = false;
+    w.days.forEach(function (c) {
+      if (!c || !c.tx.length) return;
+      any = true;
+      out.push('<div class="daygroup" style="margin-bottom:8px"><div class="dayhead"><span>' + esc(Core.dayLabel(c.date)) + '</span>' +
+        '<span class="dsum num">' + (c.expense ? '지출 ' + Core.money(c.expense) : '') + (c.income ? (c.expense ? ' · ' : '') + '수입 ' + Core.money(c.income) : '') + '</span></div><div class="txlist">');
+      c.tx.forEach(function (t) {
+        var sub = [];
+        if (t.cat) sub.push(t.cat);
+        if (t.method && t.kind !== '수입') sub.push(t.method);
+        var sign = (t.kind === '지출' || t.kind === '할부') ? '−' : (t.kind === '수입' ? '+' : '');
+        var amtTxt = t.kind === '카드할인' ? Core.signed(t.amount) : sign + Core.money(Math.abs(t.amount));
+        out.push('<button class="tx k-' + esc(t.kind) + '" data-act="txopen" data-v="' + esc(t.id) + '">' +
+          '<span class="tc">' + kindIcon(t.kind, 15) + '</span>' +
+          '<span class="tb"><span class="ti">' + esc(t.item || '(항목 없음)') + '</span>' +
+          '<span class="tm">' + esc(sub.join(' · ') || t.kind) + '</span></span>' +
+          '<span class="ta num">' + amtTxt + '</span></button>');
+      });
+      out.push('</div></div>');
+    });
+    if (!any) out.push('<div class="empty">이 주에는 적은 내역이 없어요</div>');
+    out.push('</div>');
+    return out.join('');
+  }
+
+  /* ---------- 거래 목록 ---------- */
+  function viewTxList() {
     var ym = ui.ym, all = Core.txOf(S, ym), out = [];
     var list = all.slice();
     if (ui.q) {
@@ -719,8 +880,6 @@
 
     var iss = Core.issues(S, ym), issMap = {};
     iss.forEach(function (i) { issMap[i.id] = i.reasons; });
-
-    out.push(monthBar(ym));
     out.push('<div class="searchbar"><input id="q" type="search" inputmode="search" placeholder="🔍 항목·분류·메모·금액 검색" value="' + esc(ui.q) + '" data-act="q"></div>');
     out.push('<div class="filters">' + ['', '지출', '수입', '이체', '카드할인', '할부'].map(function (k) {
       return '<button class="chip' + (ui.fKind === k ? ' on' : '') + '" data-act="fkind" data-v="' + k + '">' + (k || '전체') + '</button>';
@@ -1025,11 +1184,24 @@
       .map(function (o) { return o.n; });
   }
 
+  /* 다시 그릴 때 화면 위치를 지키고, 새로 펼친 카드가 화면 밖이면 살짝 내려 줍니다 */
+  function renderKeep(focusSel) {
+    var y = window.pageYOffset || window.scrollY || 0;
+    render();
+    window.scrollTo(0, y);
+    if (!focusSel) return;
+    var box = $(focusSel);
+    if (!box) return;
+    var r = box.getBoundingClientRect(), limit = window.innerHeight - 76;
+    if (r.bottom > limit) window.scrollTo(0, Math.max(0, y + (r.bottom - limit) + 10));
+    else if (r.top < 56) window.scrollTo(0, Math.max(0, y + r.top - 62));
+  }
+
   /* ---------- 거래 입력 ---------- */
-  function openTxSheet(tx) {
+  function openTxSheet(tx, dateStr) {
     var editing = !!tx;
     var d = tx ? Object.assign({}, tx) : {
-      date: Core.todayStr(), kind: '지출', cat: '', item: '', amount: 0,
+      date: dateStr || Core.todayStr(), kind: '지출', cat: '', item: '', amount: 0,
       method: (S.settings.methods[0] || ''), memo: ''
     };
     var amtStr = String(Math.abs(Core.num(d.amount)) || '');
@@ -1143,6 +1315,7 @@
         } else {
           S.tx.push({ id: uid(), date: date, kind: st.d.kind, cat: st.d.cat, item: item, amount: amount, method: method, memo: memo });
           ui.ym = Core.ymOf(date);
+          ui.selDate = date; ui.selWeek = null;   // 달력에서 방금 적은 날을 바로 보여 줌
         }
         save();
         w.close();
@@ -1495,8 +1668,23 @@
 
   var ACT = {
     tab: function (v) { ui.tab = v; if (v === 'trend') ui.year = parseInt(ui.ym.slice(0, 4), 10); render(); },
-    mon: function (v) { ui.ym = Core.addMonths(ui.ym, parseInt(v, 10)); ui.openCats = {}; ui.openMethods = {}; render(); },
-    today: function () { ui.ym = Core.ymOf(Core.todayStr()); ui.openCats = {}; ui.openMethods = {}; render(); },
+    mon: function (v) { ui.ym = Core.addMonths(ui.ym, parseInt(v, 10)); ui.openCats = {}; ui.openMethods = {}; ui.selDate = ''; ui.selWeek = null; render(); },
+    today: function () { ui.ym = Core.ymOf(Core.todayStr()); ui.openCats = {}; ui.openMethods = {}; ui.selDate = ''; ui.selWeek = null; render(); },
+    /* 거래 탭: 한달 달력 ↔ 내역 목록 */
+    listseg: function (v) { ui.listView = v; render(); },
+    gocal: function () { ui.tab = 'list'; ui.listView = 'cal'; ui.selDate = ''; ui.selWeek = null; render(); },
+    calsel: function (v) {
+      ui.selWeek = null;
+      ui.selDate = (ui.selDate === v ? '' : v);
+      renderKeep(ui.selDate ? '.daycard' : '');
+    },
+    calweek: function (v) {
+      var n = parseInt(v, 10);
+      ui.selDate = '';
+      ui.selWeek = (ui.selWeek === n ? null : n);
+      renderKeep(ui.selWeek ? '.daycard' : '');
+    },
+    caladd: function (v) { openTxSheet(null, v); },
     catall: function () { ui.catAll = !ui.catAll; render(); },
     'sum-cat': function (v, el) { toggleSumRow('openCats', el.getAttribute('data-cat'), 'sum-cat', 'data-cat'); },
     'sum-method': function (v, el) { toggleSumRow('openMethods', el.getAttribute('data-method'), 'sum-method', 'data-method'); },
@@ -1741,5 +1929,6 @@
   window.__budget = { get S() { return S; }, get ui() { return ui; }, act: ACT, Core: Core, sha256Hex: sha256Hex,
     render: render, normalize: normalize, fromSeed: fromSeed, pinDigest: pinDigest, Cloud: Cloud,
     showGate: showGate, hideGate: hideGate, showSplash: showSplash, hideSplash: hideSplash, emptyState: emptyState,
-    views: { summary: viewSummary, list: viewList, trend: viewTrend, fixed: viewFixed, settings: viewSettings, bars: svgBars } };
+    views: { summary: viewSummary, list: viewList, trend: viewTrend, fixed: viewFixed, settings: viewSettings, bars: svgBars,
+      calendar: viewCalendar, txlist: viewTxList, weekBars: weekBars, calAmt: calAmt } };
 })();

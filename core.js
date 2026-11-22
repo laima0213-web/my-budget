@@ -304,6 +304,92 @@ var Core = (function () {
     return out;
   }
 
+  /* ---------- 한 달 달력 · 주간 집계 (월~일 7열) ----------
+     · 그 달(1일~말일)의 날짜만 담고, 앞뒤 빈 칸은 null 로 둡니다.
+     · 주간 합계는 그 주에 속한 '그 달 날짜'만 더하므로
+       모든 주간 합계의 합 = 그 달 실질 지출 stats().real 과 1원까지 같습니다.
+     · 하루 금액도 월간 요약과 같은 규칙: 지출 + 할부 + 카드할인(음수).
+       이체는 합계에서 빼고, 수입은 따로 셉니다. */
+  function monthCalendar(S, ym) {
+    var y = parseInt(ym.slice(0, 4), 10), m = parseInt(ym.slice(5, 7), 10);
+    var dim = daysInMonth(ym);
+    var lead = (new Date(y, m - 1, 1).getDay() + 6) % 7;   // 월요일 시작 → 0
+    var list = txOf(S, ym), byDate = {}, i, k;
+    for (i = 0; i < list.length; i++) {
+      var t = list[i], dt = String(t.date);
+      if (!byDate[dt]) byDate[dt] = [];
+      byDate[dt].push(t);
+    }
+
+    var cells = [];
+    for (i = 0; i < lead; i++) cells.push(null);
+    for (var d = 1; d <= dim; d++) {
+      var date = ym + '-' + pad(d), txs = byDate[date] || [];
+      var day = {
+        date: date, day: d, dow: new Date(y, m - 1, d).getDay(),
+        expense: 0, income: 0, count: txs.length, items: [], top: '', topCat: '', tx: txs
+      };
+      for (k = 0; k < txs.length; k++) {
+        var a = num(txs[k].amount), kd = txs[k].kind;
+        if (kd === '수입') day.income += a;
+        else if (OUTGOING[kd] || kd === '카드할인') day.expense += a;
+      }
+      var outs = [];
+      for (k = 0; k < txs.length; k++) if (OUTGOING[txs[k].kind]) outs.push(txs[k]);
+      outs.sort(function (p, q) { return Math.abs(num(q.amount)) - Math.abs(num(p.amount)); });
+      for (k = 0; k < outs.length && k < 3; k++) {
+        day.items.push({
+          item: outs[k].item || outs[k].cat || '', amount: num(outs[k].amount),
+          cat: outs[k].cat || '', method: outs[k].method || '', id: outs[k].id
+        });
+      }
+      if (day.items.length) { day.top = day.items[0].item; day.topCat = day.items[0].cat; }
+      cells.push(day);
+    }
+    while (cells.length % 7) cells.push(null);
+
+    var weeks = [], totalExpense = 0, totalIncome = 0, totalCount = 0, maxDay = 0, maxDayDate = '';
+    for (var w = 0; w < cells.length / 7; w++) {
+      var row = cells.slice(w * 7, w * 7 + 7), wExp = 0, wInc = 0, wCnt = 0, first = null, last = null;
+      for (i = 0; i < 7; i++) {
+        var c = row[i];
+        if (!c) continue;
+        if (first === null) first = c.day;
+        last = c.day;
+        wExp += c.expense; wInc += c.income; wCnt += c.count;
+      }
+      totalExpense += wExp; totalIncome += wInc; totalCount += wCnt;
+      weeks.push({
+        idx: w + 1, days: row, expense: wExp, income: wInc, count: wCnt,
+        startDay: first, endDay: last, startDate: first === null ? '' : ym + '-' + pad(first),
+        endDate: last === null ? '' : ym + '-' + pad(last),
+        label: (w + 1) + '주',
+        range: first === null ? '' : (first === last ? (m + '/' + first) : (m + '/' + first + '~' + last))
+      });
+    }
+    for (i = 0; i < cells.length; i++) {
+      var cc = cells[i];
+      if (cc && cc.expense > maxDay) { maxDay = cc.expense; maxDayDate = cc.date; }
+    }
+
+    var maxWeek = 0, maxWeekIdx = 0, topWeek = null;
+    for (i = 0; i < weeks.length; i++) {
+      if (weeks[i].expense > maxWeek) { maxWeek = weeks[i].expense; maxWeekIdx = weeks[i].idx; topWeek = weeks[i]; }
+    }
+    var activeWeeks = weeks.filter(function (x) { return x.startDay !== null; });
+    var spentDays = cells.filter(function (x) { return x && x.expense; }).length;
+
+    return {
+      ym: ym, month: m, days: dim, lead: lead, cells: cells, weeks: weeks,
+      totalExpense: totalExpense, totalIncome: totalIncome, count: totalCount,
+      maxWeek: maxWeek, maxWeekIdx: maxWeekIdx, topWeek: topWeek,
+      avgWeek: activeWeeks.length ? totalExpense / activeWeeks.length : 0,
+      avgDay: dim ? totalExpense / dim : 0,
+      spentDays: spentDays,
+      maxDay: maxDay, maxDayDate: maxDayDate
+    };
+  }
+
   /* ---------- 표 내보내기용 ---------- */
   function monthRows(S, ym) {
     var list = txOf(S, ym).slice();
@@ -319,7 +405,7 @@ var Core = (function () {
     catTx: catTx, methodTx: methodTx, trend: trend,
     yearTable: yearTable, yearCatTotals: yearCatTotals, yearsInData: yearsInData,
     assetMonths: assetMonths, assetRow: assetRow, assetSeries: assetSeries, latestNetWorth: latestNetWorth,
-    issues: issues, fixedPlan: fixedPlan, monthRows: monthRows
+    issues: issues, fixedPlan: fixedPlan, monthRows: monthRows, monthCalendar: monthCalendar
   };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = Core;
