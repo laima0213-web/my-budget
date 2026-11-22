@@ -738,12 +738,15 @@
 
   /* ---------- 한달 달력 · 주간 총액 그림 ---------- */
   function calAmt(v) {
-    v = Math.abs(Math.round(Core.num(v)));
+    v = Math.round(Core.num(v));
+    var neg = v < 0;
+    v = Math.abs(v);
     if (!v) return '';
-    if (v < 10000) return Core.money(v);
+    var s = neg ? '−' : '';
+    if (v < 10000) return s + Core.money(v);
     var man = v / 10000;
-    if (man >= 100) return Math.round(man) + '만';
-    return man.toFixed(1).replace(/\.0$/, '') + '만';
+    if (man >= 100) return s + Math.round(man) + '만';
+    return s + man.toFixed(1).replace(/\.0$/, '') + '만';
   }
   function heatLevel(exp, max) {
     if (!exp || !max) return 0;
@@ -758,11 +761,12 @@
       (c.dow === 0 ? ' sun' : c.dow === 6 ? ' sat' : '') +
       (ui.selDate === c.date ? ' sel' : '');
     var low = [];
-    if (c.expense) low.push('<span class="dspend num">' + calAmt(c.expense) + '</span>');
+    if (c.expense) low.push('<span class="dspend num' + (c.expense < 0 ? ' neg' : '') + '">' + calAmt(c.expense) + '</span>');
     if (c.income) low.push('<span class="dinc num">+수입</span>');
     else if (c.top) low.push('<span class="ditem">' + esc(c.top) + '</span>');
     return '<button class="' + cls + '" data-act="calsel" data-v="' + c.date + '" aria-label="' + c.day + '일' +
-      (c.expense ? ' 지출 ' + Core.money(c.expense) + '원' : ' 지출 없음') + (c.income ? ' 수입 ' + Core.money(c.income) + '원' : '') + '">' +
+      (c.expense > 0 ? ' 지출 ' + Core.money(c.expense) + '원' : c.expense < 0 ? ' 할인 ' + Core.money(-c.expense) + '원' : ' 지출 없음') +
+      (c.income ? ' 수입 ' + Core.money(c.income) + '원' : '') + '">' +
       '<span class="dnum num">' + c.day + '</span>' + low.join('') + '</button>';
   }
   function viewCalendar() {
