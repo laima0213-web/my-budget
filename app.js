@@ -652,21 +652,25 @@
       var full = donutShortName(parts[i].name);
       var box = null, txt = '';
 
-      if (deg >= DONUT_INSIDE_DEG) {                     /* 띠 안 */
-        var x = G.cx + G.R * sn, y = G.cy - G.R * cs;
-        var cand = full.length > 2 ? [full, donutHalfName(full)] : [full];
-        for (var k = 0; k < cand.length && !box; k++) {
-          var w = textWidth(cand[k], DONUT_FS);
-          var b = { x1: x - w / 2 - 2, x2: x + w / 2 + 2,
+      /* 띠 안 — 조각 가운데 각도, 넓은 조각은 온 이름, 좁은 조각은 두 글자.
+         이웃 글자와 부딪히면 띠 안에서 조금 안/밖으로 반지름을 옮겨 보고,
+         그래도 자리가 없으면 띠 밖에 연결선으로 적습니다. */
+      var names = deg >= DONUT_INSIDE_DEG ? (full.length > 2 ? [full, donutHalfName(full)] : [full])
+        : [donutHalfName(full)];
+      var radii = [G.R, G.R + 10, G.R - 10];
+      for (var ri = 0; ri < radii.length && !box; ri++) {
+        var x = G.cx + radii[ri] * sn, y = G.cy - radii[ri] * cs;
+        for (var k = 0; k < names.length && !box; k++) {
+          var w = textWidth(names[k], DONUT_FS);
+          var b = { x1: x - w / 2 - 1.5, x2: x + w / 2 + 1.5,
             y1: y - DONUT_FS * 0.62 - 1, y2: y + DONUT_FS * 0.62 + 1, x: x, y: y };
-          if (freeBox(b)) { box = b; txt = cand[k]; }
+          if (freeBox(b)) { box = b; txt = names[k]; }
         }
-        if (box) {
-          placed.push(box);
-          out.push('<text class="dlbl" x="' + box.x.toFixed(1) + '" y="' + box.y.toFixed(1) + '" text-anchor="middle" dy=".34em">' + esc(txt) + '</text>');
-          continue;
-        }
-        /* 자리가 모자라면 아래 띠 밖 규칙으로 */
+      }
+      if (box) {
+        placed.push(box);
+        out.push('<text class="dlbl" x="' + box.x.toFixed(1) + '" y="' + box.y.toFixed(1) + '" text-anchor="middle" dy=".34em">' + esc(txt) + '</text>');
+        continue;
       }
 
       /* 띠 밖 — 짧은 이름 + 연결선 */
