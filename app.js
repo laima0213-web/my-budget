@@ -632,14 +632,14 @@
   }
 
   /* 도넛 조각 위의 한글 이름
-     · 5% 이상 넓은 조각: 띠 안 정가운데에 흰 글씨 (넓은 조각부터 자리를 잡음)
-     · 1.5~5% 좁은 조각: 띠 밖에 짧은 이름 + 연결선 (좌우·위아래로 밀어 겹침을 피함)
+     · 5% 이상 넓은 조각: 띠 안 정가운데에 온 이름 (넓은 조각부터 자리를 잡음)
+     · 1.5~5% 좁은 조각: 두 글자로 줄여 띠 안에 (자리가 없으면 띠 밖 짧은 이름 + 연결선)
      · 1.5% 미만: 색 띠만 남기고 이름은 아래 목록에서
      놓기 전 상자끼리 비교해서 글자가 서로 겹치는 일이 없게 합니다. */
   function donutLabels(parts, total) {
     var G = DONUT_GEO, placed = [], out = [], acc = 0, i, j;
     function freeBox(b) {
-      if (b.x1 < 2 || b.x2 > 298 || b.y1 < 2 || b.y2 > 298) return false;
+      if (b.x1 < 2 || b.x2 > 298 || b.y1 < 2 || b.y2 > 278) return false;
       for (j = 0; j < placed.length; j++) if (boxHit(b, placed[j])) return false;
       return true;
     }
@@ -680,6 +680,7 @@
       var moves = [[0, 0], [0, -13], [0, 13], [-10, -7], [10, -7], [0, -26], [0, 26], [-14, 8], [14, 8], [-16, -14], [16, -14]];
       for (var m = 0; m < moves.length && !box; m++) {
         var bx = ox + moves[m][0], by = oy + moves[m][1];
+        if (Math.sqrt((bx - G.cx) * (bx - G.cx) + (by - G.cy) * (by - G.cy)) < G.R + G.w / 2 + 6) continue;  /* 띠 위로는 놓지 않음 */
         var b2 = { x1: bx - ow / 2 - 1, x2: bx + ow / 2 + 1, y1: by - oh - 1, y2: by + oh + 1, x: bx, y: by };
         if (freeBox(b2)) { box = b2; }
       }
