@@ -697,6 +697,8 @@
     var allCats = Core.catSummary(S, ym, { all: true });
     var donut = donutCard(allCats);
     var catTotal = donut.total;
+    var catMax = 0;
+    allCats.forEach(function (r) { if (Core.num(r.now) > catMax) catMax = Core.num(r.now); });
     out.push(donut.html);
 
     var cats = allCats.filter(function (r) { return ui.catAll || r.now || r.prev || r.budget; });
@@ -708,7 +710,7 @@
       if (r.useRate !== null) meta = '예산 ' + Core.money(r.budget) + ' 중 ' + Core.pct(r.useRate, 0);
       /* 전체 지출 대비 비중 — 예산이 없어도 이 줄이 몇 % 인지 바로 읽히게 */
       var share = catTotal ? r.now / catTotal : 0;
-      var shareW = r.now && catTotal ? Math.max(2, share * 100) : 0;
+      var shareW = r.now && catMax ? Math.max(3, r.now / catMax * 100) : 0;
       var bar = r.useRate !== null
         ? '<span class="bar"><i class="' + (r.useRate > 1 ? 'over' : '') + '" style="width:' + Math.min(100, Math.max(2, r.useRate * 100)) + '%"></i></span>'
         : (shareW ? '<span class="bar share"><i style="width:' + shareW.toFixed(1) + '%"></i></span>' : '');
@@ -726,7 +728,7 @@
     if (cats.length > 8) out.push('<button class="btn ghost sm" data-act="catall" style="margin-top:8px">' + (ui.catAll ? '접기' : '분류 ' + cats.length + '개 모두 보기') + '</button>');
     out.push('<div class="totrow"><span>지출 합계</span><span class="muted tiny">카드할인 ' + Core.signed(st.discount) + '</span><span class="amt num">' + Core.money(st.real) + '</span></div>');
     out.push('</div>');
-    if (!cats.some(function (r) { return r.budget; })) out.push('<p class="hint">설정에서 분류별 월 예산을 넣으면 여기에 사용률 막대가 그려져요.</p>');
+    if (!cats.some(function (r) { return r.budget; })) out.push('<p class="hint">막대는 이번 달 지출 중 이 분류가 차지하는 비중이에요. 설정에서 분류별 월 예산을 넣으면 예산 사용률 막대로 바뀝니다.</p>');
     out.push('</div>');
 
     /* 결제수단 */
