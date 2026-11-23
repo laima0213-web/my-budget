@@ -625,7 +625,8 @@
       out.push('<div class="empty">이 달 지출이 쌓이면 어디에 많이 썼는지 그림으로 보여 드려요</div></div>');
       return { html: out.join(''), total: 0, parts: [] };
     }
-    var maxShare = dp.parts[0].now / dp.total;
+    var maxShare = 0;
+    dp.parts.forEach(function (p) { if (p.now / dp.total > maxShare) maxShare = p.now / dp.total; });
     out.push('<div class="donutwrap"><div class="donutbox">' + svgDonut(dp.parts, dp.total) + '</div><div class="dlist">');
     dp.parts.forEach(function (p) {
       var share = p.now / dp.total;
