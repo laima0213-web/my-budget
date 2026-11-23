@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
+<meta name="theme-color" content="#FBF8F1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="우리집 가계부">
+<meta name="description" content="폰에서 한 손으로 적는 우리집 가계부 · 월간요약·연간추이·자산·엑셀 내보내기">
+<title>우리집 가계부</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=9&cb=donut1">
+</head>
+<body>
+
+<!-- ============================================================
+     첫 접속 로그인 화면 — 아무것도 누르지 않아도 자동으로 뜹니다
+     한 번 로그인하면 이 폰에서는 기억해요 (비밀번호는 코드에 없음)
+     ============================================================ -->
+<div class="gate" id="gate" hidden>
+  <div class="gate-card">
+    <div class="gate-ic"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10" width="15" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.2"/></svg></div>
+    <h2>우리집 가계부</h2>
+    <p class="gate-sub">가계부 전용 계정으로 들어가면<br>클라우드에 있는 내역을 그대로 불러와요</p>
+    <div class="gate-field">
+      <label for="gateEmail">이메일</label>
+      <input id="gateEmail" type="text" inputmode="email" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="mybudget@family.local">
+    </div>
+    <div class="gate-field">
+      <label for="gatePw">비밀번호</label>
+      <input id="gatePw" type="password" autocomplete="current-password" placeholder="비밀번호를 넣어 주세요">
+    </div>
+    <div class="gate-msg" id="gateMsg" role="alert"></div>
+    <button class="gate-btn" id="gateBtn" type="button">로그인</button>
+    <p class="gate-hint">한 번 로그인하면 이 폰에서는 기억해요</p>
+  </div>
+</div>
+
+<!-- 데이터를 받아오는 동안 0원 화면이 깜빡이지 않게 -->
+<div class="splash" id="splash"><div class="spin"></div><p>가계부 불러오는 중…</p></div>
+
+<div id="app">
+  <header class="top">
+    <h1><span id="appTitle">우리집 가계부</span></h1>
+    <button class="iconbtn" data-act="cloud" aria-label="동기화 상태" title="동기화 상태">
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a4 4 0 0 1 0-8 5.5 5.5 0 0 1 10.6-1A3.5 3.5 0 0 1 18 18z"/></svg>
+    </button>
+    <button class="iconbtn" data-act="tab" data-v="settings" aria-label="설정" title="설정">
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>
+    </button>
+  </header>
+  <main id="view"></main>
+</div>
+
+<nav class="bottom" id="nav">
+  <button class="nav" data-act="tab" data-v="summary">
+    <span class="ic"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>
+    <span>요약</span>
+  </button>
+  <button class="nav" data-act="tab" data-v="list">
+    <span class="ic"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg></span>
+    <span>거래</span>
+  </button>
+  <div class="fabwrap"><button class="fab" data-act="txnew" aria-label="거래 추가">＋</button></div>
+  <button class="nav" data-act="tab" data-v="trend">
+    <span class="ic"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 7-7"/><path d="M15 8h6v6"/></svg></span>
+    <span>추이</span>
+  </button>
+  <button class="nav" data-act="tab" data-v="fixed">
+    <span class="ic"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11a8 8 0 0 1 13.7-5.7L20 8"/><path d="M20 3v5h-5"/><path d="M21 13a8 8 0 0 1-13.7 5.7L4 16"/><path d="M4 21v-5h5"/></svg></span>
+    <span>고정비</span>
+  </button>
+</nav>
+
+<div id="lock" aria-hidden="true"></div>
+<div id="sheetroot"></div>
+<div id="toast" role="status"></div>
+
+<script src="core.js?v=9&cb=donut1"></script>
+<script src="app.js?v=9&cb=donut1"></script>
+</body>
+</html>
