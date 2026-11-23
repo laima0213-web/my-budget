@@ -574,8 +574,8 @@
      띠가 아주 얇아 글자가 들어갈 수 없는 조각은 도넛에 이름을 적지 않고 아래 목록에서 보여 줍니다. */
   var DONUT_FOOD = '#CE7B67';                 /* 식비 3가지 공통 색 */
   var DONUT_COLORS = ['#7FA98A', '#D6A94C', '#7E9FC0', '#C98F9E', '#9DAF6B', '#A99BC4',
-    '#B58F6E', '#6FA3A0', '#E0A96D', '#8894B8', '#8FBFA8', '#A98BA8',
-    '#9EC3D3', '#B3B77A', '#6E8F7C', '#7C6E8F'];
+    '#B58F6E', '#6FA3A0', '#D79C5E', '#8894B8', '#7DB198', '#A98BA8',
+    '#86AEC1', '#A5AB70', '#6E8F7C', '#7C6E8F'];
   var DONUT_GEO = { cx: 150, cy: 150, R: 84, w: 62 };   /* viewBox 300 · 띠 두께 62 */
   var DONUT_INSIDE_DEG = 18;                  /* 5% 이상 — 띠 안 정가운데 이름 */
   var DONUT_MIN_DEG = 7.5;                    /* 1.5% 미만 — 도넛에 이름 없이 목록에서만 */
@@ -681,8 +681,8 @@
       }
       if (!box) continue;
       placed.push(box);
-      var r1 = G.R + G.w / 2 + 1, r2 = DONUT_OUT_R - oh - 7;
-      out.push('<line class="dlead" x1="' + (G.cx + r1 * sn).toFixed(1) + '" y1="' + (G.cy - r1 * cs).toFixed(1) +
+      var r1 = G.R + G.w / 2 + 1, r2 = DONUT_OUT_R - oh - 6;
+      out.push('<line class="dlead" stroke="' + parts[i].color + '" x1="' + (G.cx + r1 * sn).toFixed(1) + '" y1="' + (G.cy - r1 * cs).toFixed(1) +
         '" x2="' + (G.cx + r2 * sn).toFixed(1) + '" y2="' + (G.cy - r2 * cs).toFixed(1) + '"/>');
       out.push('<text class="dout" x="' + box.x.toFixed(1) + '" y="' + box.y.toFixed(1) + '" text-anchor="middle" dy=".34em">' + esc(txt) + '</text>');
     }
