@@ -179,7 +179,7 @@ header.top h1 .leaf{margin-right:4px}
 .tx.k-카드할인 .ta{color:var(--blue)}
 .tx.k-이체 .ta{color:var(--ink3)}
 .tx .warn{margin-left:2px}
-.empty{text-align:center;color:var(--ink3);font-size:12.5px;padding:26px 10px}
+.empty{text-align:center;color:var(--ink3);font-size:12.5px;padding:26px 10px;word-break:keep-all}
 
 /* ---------- 하단 내비 ---------- */
 nav.bottom{
