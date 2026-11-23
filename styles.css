@@ -460,13 +460,19 @@ nav.bottom .ic svg{display:block}
    ============================================================ */
 .donutcard .hint{margin-top:8px}
 .donutwrap{display:flex;flex-direction:column;align-items:center;gap:10px}
-.donutbox{width:188px;max-width:68%;flex:0 0 auto}
+.donutbox{width:100%;max-width:300px;flex:0 0 auto}
 .donutbox svg{display:block;width:100%;height:auto;overflow:visible}
-.donut .dseg{fill:none;stroke-width:15;stroke-linecap:butt}
-.donut .dctr-lb{font-size:8.5px;font-weight:800;fill:var(--ink3);font-family:inherit;letter-spacing:.2px}
-.donut .dctr-amt{font-size:12.5px;font-weight:800;fill:var(--ink);font-family:inherit;letter-spacing:-.4px;font-variant-numeric:tabular-nums}
+.donut .dseg{fill:none;stroke-width:62;stroke-linecap:butt}
+/* 띠 안 분류 이름 — 색 위에 흰 글씨, 가장자리에 엷은 테두리를 둘러 읽히게 */
+.donut .dlbl{font-size:10.5px;font-weight:800;fill:#fff;font-family:inherit;letter-spacing:-.2px;
+  paint-order:stroke;stroke:rgba(72,52,40,.32);stroke-width:2.4px;stroke-linejoin:round}
+/* 띠 밖 짧은 이름(1.5~5% 조각) — 옅은 연결선으로 조각과 이어 줌 */
+.donut .dlead{stroke:#C9C2B2;stroke-width:1.2;stroke-linecap:round}
+.donut .dout{font-size:10px;font-weight:800;fill:var(--ink2);font-family:inherit;letter-spacing:-.2px}
+.donut .dctr-lb{font-size:11px;font-weight:800;fill:var(--ink3);font-family:inherit;letter-spacing:.2px}
+.donut .dctr-amt{font-size:16px;font-weight:800;fill:var(--ink);font-family:inherit;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
 .dlist{display:flex;flex-direction:column;width:100%}
-.drow{display:block;width:100%;text-align:left;padding:7px 4px;margin:0 -4px;border-radius:10px;border-bottom:1px dashed #EDE7DA}
+.drow{display:block;width:100%;text-align:left;padding:6px 4px;margin:0 -4px;border-radius:10px;border-bottom:1px dashed #EDE7DA}
 .drow:last-child{border-bottom:0}
 .drow.static{cursor:default}
 .drow:not(.static):hover{background:#FAF6EC}
@@ -492,7 +498,7 @@ nav.bottom .ic svg{display:block}
 .bar.share>i{background:linear-gradient(90deg,#CBE2D2,#8FB59B)}
 
 @media (min-width:470px){
-  .donutwrap{flex-direction:row;align-items:center;gap:14px}
-  .donutbox{width:158px;max-width:42%}
-  .dlist{flex:1;min-width:0}
+  /* 넓은 화면에서도 띠 안 이름이 작아지지 않게 도넛은 제 크기(300)를 지키고 목록은 아래에 */
+  .donutbox{max-width:300px}
+  .dlist{max-width:420px;margin:0 auto}
 }

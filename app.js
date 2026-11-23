@@ -567,29 +567,126 @@
   }
 
   /* ---------- 지출 비중 그림 (도넛 + 순위 목록) ----------
-     금액이 있는 분류를 큰 것부터 늘어놓고, 앞 6개는 제 색으로,
-     나머지는 '기타'(그레이베이지)로 묶어 한 바퀴가 100% 가 됩니다. */
-  var DONUT_COLORS = ['#CE7B67', '#7FA98A', '#D6A94C', '#7E9FC0', '#A99BC4', '#E4A882'];
-  var DONUT_OTHER = '#C7C0AF';
-  var DONUT_TOP = 6;
+     지출이 있는 분류를 큰 순서로 하나도 묶지 않고 전부 도넛 조각으로 보여 줍니다.
+     식비 3가지는 한 가지 색으로, 나머지 분류는 서로 겹치지 않는 차분한 색을 돌아가며 씁니다.
+     도넛 띠 안에는 그 조각의 이름을 짧게 흰 글씨로 적어, 색만 보고도 어디에 썼는지 읽히게 합니다.
+     글자는 놓기 전에 자리를 계산해(상자끼리 비교) 서로 겹치지 않게 하고,
+     띠가 아주 얇아 글자가 들어갈 수 없는 조각은 도넛에 이름을 적지 않고 아래 목록에서 보여 줍니다. */
+  var DONUT_FOOD = '#CE7B67';                 /* 식비 3가지 공통 색 */
+  var DONUT_COLORS = ['#7FA98A', '#D6A94C', '#7E9FC0', '#C98F9E', '#9DAF6B', '#A99BC4',
+    '#B58F6E', '#6FA3A0', '#E0A96D', '#8894B8', '#8FBFA8', '#A98BA8',
+    '#9EC3D3', '#B3B77A', '#6E8F7C', '#7C6E8F'];
+  var DONUT_GEO = { cx: 150, cy: 150, R: 84, w: 62 };   /* viewBox 300 · 띠 두께 62 */
+  var DONUT_INSIDE_DEG = 18;                  /* 5% 이상 — 띠 안 정가운데 이름 */
+  var DONUT_MIN_DEG = 7.5;                    /* 1.5% 미만 — 도넛에 이름 없이 목록에서만 */
+  var DONUT_FS = 10.5;                        /* 띠 안 이름 글자 크기 */
+  var DONUT_OUT_FS = 10;                      /* 띠 밖 이름 글자 크기 */
+  var DONUT_OUT_R = 137;                      /* 띠 밖 이름 중심 거리 */
+  var DONUT_SHORT = {
+    '식비(배달외식)': '배달외식', '식비(식재료)': '식재료', '식비(간식)': '간식',
+    '교통,주유': '교통주유', '헤어뷰티.패션': '뷰티패션', '가구,가전': '가구가전',
+    '경조사비,모임회비': '경조사', '문화생활.여행': '문화여행', '병원,약국': '병원약국',
+    '관리비,통신비,정수기': '관리비', '대출이자.세금': '대출이자', '학원,교재비': '학원교재'
+  };
 
   function donutParts(cats) {
-    var list = [], total = 0, i, k;
+    var list = [], total = 0, i;
     for (i = 0; i < cats.length; i++) {
       var now = Core.num(cats[i].now);
       if (now > 0) { list.push({ name: cats[i].name, now: now, unknown: !!cats[i].unknown }); total += now; }
     }
-    list.sort(function (a, b) { return b.now - a.now; });
-    var parts = [], rest = list.slice(DONUT_TOP);
-    for (k = 0; k < Math.min(DONUT_TOP, list.length); k++) {
-      parts.push({ name: list[k].name, now: list[k].now, color: DONUT_COLORS[k], unknown: list[k].unknown, other: false });
+    list.sort(function (a, b) { return b.now - a.now || (a.name < b.name ? -1 : 1); });
+    var ci = 0;
+    for (i = 0; i < list.length; i++) {
+      list[i].food = list[i].name.indexOf('식비') === 0;
+      list[i].color = list[i].food ? DONUT_FOOD : DONUT_COLORS[ci++ % DONUT_COLORS.length];
     }
-    if (rest.length) {
-      var sum = 0;
-      for (i = 0; i < rest.length; i++) sum += rest[i].now;
-      parts.push({ name: '기타', now: sum, color: DONUT_OTHER, other: true, count: rest.length });
+    return { parts: list, total: total, count: list.length };
+  }
+
+  /* 띠 안에 적을 짧은 이름 — 모르는 분류는 괄호 안(있으면)이나 앞 4자 */
+  function donutShortName(name) {
+    var s = String(name || '');
+    if (DONUT_SHORT[s]) return DONUT_SHORT[s];
+    var p = s.match(/^[^(]+\(([^)]+)\)$/);
+    if (p) s = p[1];
+    s = s.replace(/[,.·\/\s]/g, '');
+    return s.length > 4 ? s.slice(0, 4) : s;
+  }
+  function donutHalfName(nm) { return nm.length > 2 ? nm.slice(0, 2) : nm; }
+
+  /* 글자 폭 어림 (한글은 글자 크기만큼, 영문·숫자는 조금 좁게) */
+  function textWidth(s, fs) {
+    var w = 0;
+    for (var i = 0; i < s.length; i++) {
+      var ch = s.charAt(i), c = s.charCodeAt(i);
+      if (c >= 0x1100) w += fs;
+      else if (/[A-Za-z0-9]/.test(ch)) w += fs * 0.66;
+      else if (ch === ' ') w += fs * 0.3;
+      else w += fs * 0.45;
     }
-    return { parts: parts, total: total, count: list.length };
+    return w;
+  }
+  function boxHit(a, b) {
+    return a.x1 < b.x2 && a.x2 > b.x1 && a.y1 < b.y2 && a.y2 > b.y1;
+  }
+
+  /* 도넛 조각 위의 한글 이름
+     · 5% 이상 넓은 조각: 띠 안 정가운데에 흰 글씨 (넓은 조각부터 자리를 잡음)
+     · 1.5~5% 좁은 조각: 띠 밖에 짧은 이름 + 연결선 (좌우·위아래로 밀어 겹침을 피함)
+     · 1.5% 미만: 색 띠만 남기고 이름은 아래 목록에서
+     놓기 전 상자끼리 비교해서 글자가 서로 겹치는 일이 없게 합니다. */
+  function donutLabels(parts, total) {
+    var G = DONUT_GEO, placed = [], out = [], acc = 0, i, j;
+    function freeBox(b) {
+      if (b.x1 < 2 || b.x2 > 298 || b.y1 < 2 || b.y2 > 298) return false;
+      for (j = 0; j < placed.length; j++) if (boxHit(b, placed[j])) return false;
+      return true;
+    }
+    for (i = 0; i < parts.length; i++) {
+      var share = total ? parts[i].now / total : 0;
+      var deg = share * 360, mid = acc + deg / 2;
+      acc += deg;
+      if (deg < DONUT_MIN_DEG) continue;
+      var rad = mid * Math.PI / 180, sn = Math.sin(rad), cs = Math.cos(rad);
+      var full = donutShortName(parts[i].name);
+      var box = null, txt = '';
+
+      if (deg >= DONUT_INSIDE_DEG) {                     /* 띠 안 */
+        var x = G.cx + G.R * sn, y = G.cy - G.R * cs;
+        var cand = full.length > 2 ? [full, donutHalfName(full)] : [full];
+        for (var k = 0; k < cand.length && !box; k++) {
+          var w = textWidth(cand[k], DONUT_FS);
+          var b = { x1: x - w / 2 - 2, x2: x + w / 2 + 2,
+            y1: y - DONUT_FS * 0.62 - 1, y2: y + DONUT_FS * 0.62 + 1, x: x, y: y };
+          if (freeBox(b)) { box = b; txt = cand[k]; }
+        }
+        if (box) {
+          placed.push(box);
+          out.push('<text class="dlbl" x="' + box.x.toFixed(1) + '" y="' + box.y.toFixed(1) + '" text-anchor="middle" dy=".34em">' + esc(txt) + '</text>');
+          continue;
+        }
+        /* 자리가 모자라면 아래 띠 밖 규칙으로 */
+      }
+
+      /* 띠 밖 — 짧은 이름 + 연결선 */
+      txt = donutHalfName(full);
+      var ow = textWidth(txt, DONUT_OUT_FS), oh = DONUT_OUT_FS * 0.62;
+      var ox = G.cx + DONUT_OUT_R * sn, oy = G.cy - DONUT_OUT_R * cs;
+      var moves = [[0, 0], [0, -13], [0, 13], [-10, -7], [10, -7], [0, -26], [0, 26], [-14, 8], [14, 8], [-16, -14], [16, -14]];
+      for (var m = 0; m < moves.length && !box; m++) {
+        var bx = ox + moves[m][0], by = oy + moves[m][1];
+        var b2 = { x1: bx - ow / 2 - 1, x2: bx + ow / 2 + 1, y1: by - oh - 1, y2: by + oh + 1, x: bx, y: by };
+        if (freeBox(b2)) { box = b2; }
+      }
+      if (!box) continue;
+      placed.push(box);
+      var r1 = G.R + G.w / 2 + 1, r2 = DONUT_OUT_R - oh - 7;
+      out.push('<line class="dlead" x1="' + (G.cx + r1 * sn).toFixed(1) + '" y1="' + (G.cy - r1 * cs).toFixed(1) +
+        '" x2="' + (G.cx + r2 * sn).toFixed(1) + '" y2="' + (G.cy - r2 * cs).toFixed(1) + '"/>');
+      out.push('<text class="dout" x="' + box.x.toFixed(1) + '" y="' + box.y.toFixed(1) + '" text-anchor="middle" dy=".34em">' + esc(txt) + '</text>');
+    }
+    return out.join('');
   }
 
   /* 비중 표기 — 0원은 —, 0.1% 미만은 <0.1% (10% 이상도 18.4% 처럼 한 자리) */
@@ -601,19 +698,20 @@
   }
 
   function svgDonut(parts, total) {
-    var R = 46, C = 2 * Math.PI * R, gap = parts.length > 1 ? 1.7 : 0, acc = 0, segs = '', i;
+    var G = DONUT_GEO, C = 2 * Math.PI * G.R, gap = parts.length > 1 ? 1.2 : 0, acc = 0, segs = '', i;
     for (i = 0; i < parts.length; i++) {
       var len = total ? parts[i].now / total * C : 0;
       var dash = Math.max(0, len - gap);
-      segs += '<circle class="dseg" cx="60" cy="60" r="' + R + '" stroke="' + parts[i].color + '"' +
+      segs += '<circle class="dseg" cx="' + G.cx + '" cy="' + G.cy + '" r="' + G.R + '" stroke="' + parts[i].color + '"' +
         ' stroke-dasharray="' + dash.toFixed(2) + ' ' + (C - dash).toFixed(2) + '"' +
         ' stroke-dashoffset="' + (-(acc + gap / 2)).toFixed(2) + '"/>';
       acc += len;
     }
-    return '<svg class="donut" viewBox="0 0 120 120" role="img" aria-label="지출 비중 도넛 · 분류 합계 ' + Core.money(total) + '원">' +
-      '<g transform="rotate(-90 60 60)">' + segs + '</g>' +
-      '<text class="dctr-lb" x="60" y="52" text-anchor="middle">총 지출</text>' +
-      '<text class="dctr-amt" x="60" y="69" text-anchor="middle">' + Core.money(total) + '원</text>' +
+    return '<svg class="donut" viewBox="0 0 300 300" role="img" aria-label="지출 비중 도넛 · 분류 합계 ' + Core.money(total) + '원">' +
+      '<g transform="rotate(-90 ' + G.cx + ' ' + G.cy + ')">' + segs + '</g>' +
+      donutLabels(parts, total) +
+      '<text class="dctr-lb" x="' + G.cx + '" y="134" text-anchor="middle">총 지출</text>' +
+      '<text class="dctr-amt" x="' + G.cx + '" y="159" text-anchor="middle">' + Core.money(total) + '원</text>' +
       '</svg>';
   }
 
@@ -631,15 +729,6 @@
     dp.parts.forEach(function (p) {
       var share = p.now / dp.total;
       var w = Math.max(3, share / maxShare * 100);
-      if (p.other) {
-        out.push('<div class="drow static">' +
-          '<span class="dl1"><i class="dot" style="background:' + p.color + '"></i>' +
-          '<span class="nm">기타 <small>분류 ' + p.count + '개</small></span>' +
-          '<span class="pc num">' + shareLabel(share) + '</span></span>' +
-          '<span class="dl2"><span class="dbar"><i style="width:' + w.toFixed(1) + '%;background:' + p.color + '"></i></span>' +
-          '<span class="amt num">' + Core.money(p.now) + '원</span></span></div>');
-        return;
-      }
       var open = !!ui.openDonut[p.name];
       out.push('<button class="drow' + (open ? ' open' : '') + '" data-act="donut-cat" data-cat="' + esc(p.name) + '" aria-expanded="' + (open ? 'true' : 'false') + '">' +
         '<span class="dl1"><i class="dot" style="background:' + p.color + '"></i>' +
@@ -651,10 +740,7 @@
       if (open) out.push(detailRows(Core.catTx(S, ui.ym, p.name), 'cat'));
     });
     out.push('</div></div>');
-    out.push('<p class="hint">' + (dp.parts.length < dp.count
-      ? '지출이 있는 분류 ' + dp.count + '개 중 큰 ' + DONUT_TOP + '개와 기타로 나눴어요. '
-      : '지출이 있는 분류 ' + dp.count + '개를 큰 순서로 보여 드려요. ') +
-      '분류를 누르면 이 달 내역이 펼쳐져요.</p>');
+    out.push('<p class="hint">지출이 있는 분류 ' + dp.count + '개를 큰 순서로 모두 보여 드려요. 분류를 누르면 이 달 내역이 펼쳐져요.</p>');
     out.push('</div>');
     return { html: out.join(''), total: dp.total, parts: dp.parts };
   }
