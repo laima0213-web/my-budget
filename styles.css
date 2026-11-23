@@ -460,7 +460,7 @@ nav.bottom .ic svg{display:block}
    ============================================================ */
 .donutcard .hint{margin-top:8px}
 .donutwrap{display:flex;flex-direction:column;align-items:center;gap:10px}
-.donutbox{width:176px;max-width:64%;flex:0 0 auto}
+.donutbox{width:188px;max-width:68%;flex:0 0 auto}
 .donutbox svg{display:block;width:100%;height:auto;overflow:visible}
 .donut .dseg{fill:none;stroke-width:15;stroke-linecap:butt}
 .donut .dctr-lb{font-size:8.5px;font-weight:800;fill:var(--ink3);font-family:inherit;letter-spacing:.2px}
