@@ -707,7 +707,7 @@
         ' stroke-dashoffset="' + (-(acc + gap / 2)).toFixed(2) + '"/>';
       acc += len;
     }
-    return '<svg class="donut" viewBox="0 0 300 300" role="img" aria-label="지출 비중 도넛 · 분류 합계 ' + Core.money(total) + '원">' +
+    return '<svg class="donut" viewBox="0 0 300 280" role="img" aria-label="지출 비중 도넛 · 분류 합계 ' + Core.money(total) + '원">' +
       '<g transform="rotate(-90 ' + G.cx + ' ' + G.cy + ')">' + segs + '</g>' +
       donutLabels(parts, total) +
       '<text class="dctr-lb" x="' + G.cx + '" y="134" text-anchor="middle">총 지출</text>' +

@@ -459,7 +459,7 @@ nav.bottom .ic svg{display:block}
    요약 · 지출 비중 도넛 (390px 폰 기준 · 가로 스크롤 0)
    ============================================================ */
 .donutcard .hint{margin-top:8px}
-.donutwrap{display:flex;flex-direction:column;align-items:center;gap:10px}
+.donutwrap{display:flex;flex-direction:column;align-items:center;gap:8px}
 .donutbox{width:100%;max-width:300px;flex:0 0 auto}
 .donutbox svg{display:block;width:100%;height:auto;overflow:visible}
 .donut .dseg{fill:none;stroke-width:62;stroke-linecap:butt}
