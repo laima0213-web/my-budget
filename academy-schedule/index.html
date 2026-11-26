@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>🎒 윤봄 학원 스케줄</title>
+<meta name="description" content="윤·봄이 학원 시간표와 셔틀, 학원비를 한눈에 보는 우리집 학원 스케줄">
+<meta name="theme-color" content="#FF7E6B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="학원 스케줄">
+<link rel="manifest" href="manifest.json?v=20261127a">
+<link rel="apple-touch-icon" href="icon-180.png?v=20261127a">
+<link rel="icon" type="image/png" href="icon-192.png?v=20261127a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{
+  --coral:#FF7E6B; --coral2:#FF9B77; --deep:#E2574A; --pink:#F4707B;
+  --cream:#FFF8EE; --card:#FFFDFA; --ink:#4A3B33; --ink2:#8E7767; --line:#FBE4D0;
+  --shadow:0 6px 18px rgba(226,150,110,.13);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--cream);color:var(--ink);
+  font-family:'Jua','Noto Sans KR',system-ui,-apple-system,sans-serif;
+  font-size:15px;line-height:1.45;
+  min-height:100vh;
+  -webkit-text-size-adjust:100%;
+}
+button,input,select,textarea{font-family:inherit;color:inherit}
+button{cursor:pointer}
+.hidden{display:none !important}
+
+/* ---------- header ---------- */
+header{
+  background:linear-gradient(155deg,#FF7E6B 0%,#FF9576 52%,#FFB18C 100%);
+  color:#fff;padding:13px 13px 0;
+  border-radius:0 0 24px 24px;
+  box-shadow:0 8px 22px rgba(255,130,105,.26);
+  position:sticky;top:0;z-index:30;
+}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.brand{font-size:19px;display:flex;align-items:center;gap:6px;text-shadow:0 1px 2px rgba(180,80,60,.22);letter-spacing:-.2px}
+.allbtn{
+  background:rgba(255,255,255,.26);border:1.5px solid rgba(255,255,255,.75);color:#fff;
+  font-size:12.5px;padding:6px 11px;border-radius:999px;white-space:nowrap;
+}
+.allbtn.on{background:#fff;color:var(--deep);border-color:#fff;box-shadow:0 3px 10px rgba(180,80,60,.22)}
+.hdr-date{font-size:13.5px;margin:6px 0 9px;display:flex;align-items:center;gap:7px;color:#FFF4EC}
+.hdr-date .wd{background:rgba(255,255,255,.28);border-radius:8px;padding:1px 8px;font-size:12.5px}
+.kids{display:flex;gap:7px;overflow-x:auto;padding:0 0 10px;scrollbar-width:none}
+.kids::-webkit-scrollbar{display:none}
+.kid{
+  display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.86);border:2px solid transparent;
+  color:#96604E;border-radius:999px;padding:7px 11px 7px 9px;font-size:14px;white-space:nowrap;flex:0 0 auto;
+}
+.kid.on{border-color:#fff;background:#fff;color:var(--deep);box-shadow:0 4px 11px rgba(180,90,70,.24)}
+.kid .dot{width:11px;height:11px;border-radius:50%;flex:0 0 11px}
+.kid .gr{font-size:11px;opacity:.72}
+.kidadd{
+  border:2px dashed rgba(255,255,255,.9);background:transparent;color:#fff;
+  border-radius:999px;padding:7px 13px;font-size:13.5px;white-space:nowrap;flex:0 0 auto;
+}
+.allkid{border:2px solid #fff;background:#fff;color:var(--deep);border-radius:999px;padding:7px 13px;font-size:13.5px;white-space:nowrap;flex:0 0 auto}
+
+/* ---------- tabs ---------- */
+.tabs{display:flex;gap:3px;overflow-x:auto;scrollbar-width:none;padding:0}
+.tabs::-webkit-scrollbar{display:none}
+.tab{
+  flex:0 1 auto;border:0;background:rgba(255,255,255,.2);color:#FFF2E8;
+  font-size:11.5px;padding:7px 5px;border-radius:12px 12px 0 0;white-space:nowrap;letter-spacing:-.4px;
+}
+.tab.on{background:var(--cream);color:var(--deep);font-size:11.5px;padding-bottom:9px}
+
+/* ---------- layout ---------- */
+main{padding:12px 12px calc(30px + env(safe-area-inset-bottom));max-width:520px;margin:0 auto}
+.card{
+  background:var(--card);border-radius:18px;padding:14px;box-shadow:var(--shadow);
+  border:1px solid #FDEADA;margin-bottom:12px;
+}
+.card.flush{padding:0;overflow:hidden}
+h2{font-size:16px;margin:0 0 10px;display:flex;align-items:center;gap:6px;font-weight:normal}
+h2 .sub{font-size:12px;color:var(--ink2);margin-left:auto}
+.muted{color:var(--ink2);font-size:12.5px}
+.sep{height:1px;background:var(--line);margin:11px 0}
+
+/* ---------- today timeline ---------- */
+.tl{background:linear-gradient(150deg,#FFF4E6,#FFE8D3);border:1px solid #FFDCC2}
+.tl-kicker{font-size:12px;color:#C97A5E;display:flex;align-items:center;gap:5px}
+.tl-big{font-size:23px;color:var(--deep);margin:3px 0 1px;line-height:1.24;letter-spacing:-.4px}
+.tl-sub{font-size:13px;color:#8A6552}
+.tl-left{display:inline-block;margin-top:8px;background:#fff;border-radius:999px;padding:4px 11px;font-size:12px;color:#D2705A;border:1px solid #FFD9C6}
+.tl-list{margin-top:11px;display:flex;flex-direction:column;gap:6px}
+.tl-row{display:flex;align-items:center;gap:8px;font-size:13px;color:#7B5D4D}
+.tl-row .t{font-size:12.5px;color:#C97A5E;min-width:40px}
+.tl-row .kchip{font-size:10.5px;background:#fff;border-radius:7px;padding:1px 6px;border:1px solid #FFE0CD}
+.tl-row.done{opacity:.45;text-decoration:line-through}
+.tl-row .ic{font-size:13px}
+
+/* ---------- week controls ---------- */
+.ctrlrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.tog{border:1.5px solid #FBE0CB;background:#FFF9F1;color:#A6806C;border-radius:999px;padding:6px 11px;font-size:12.5px}
+.tog.on{background:#FFEFE4;border-color:#FFC7AC;color:var(--deep)}
+.sel{border:1.5px solid #FBE0CB;background:#FFF9F1;color:#7B5D4D;border-radius:11px;padding:6px 8px;font-size:12.5px}
+.rnglbl{font-size:12.5px;color:var(--ink2)}
+
+/* ---------- timetable grid ---------- */
+.tt{display:flex;flex-direction:column;border:1px solid #F7E3CF;border-radius:14px;overflow:hidden;background:#FFFDF8}
+.gutter{width:38px;flex:0 0 38px;position:relative;background:#FFF7EC}
+.gutter b{position:absolute;right:5px;font-size:10.5px;color:#B79A86;font-weight:normal;transform:translateY(-50%)}
+.gridwrap{flex:1;min-width:0}
+.dayrow{display:flex;border-bottom:1px solid #F7E3CF;background:#FFFBF3}
+.dayrow .sp{width:38px;flex:0 0 38px;border-right:1px solid #F7E3CF}
+.dayrow .dh{flex:1 1 0;min-width:0;text-align:center;font-size:12px;color:#8E7767;padding:5px 0}
+.dayrow .dh.sun{color:#E06A6A}
+.dayrow .dh.sat{color:#5D8FD6}
+.cols{display:flex}
+.daycol{flex:1 1 0;min-width:0;position:relative;border-left:1px dashed #F6DFC9}
+.gutter .lines,.daycol .lines{position:absolute;inset:0;pointer-events:none}
+.blk{
+  position:absolute;left:2px;right:2px;border-radius:9px;padding:3px 4px;overflow:hidden;
+  font-size:9.5px;line-height:1.12;background:var(--bg);border-left:3px solid var(--c);color:#6A4A3C;
+  display:flex;flex-direction:column;gap:1px;
+}
+.blk b{font-size:9.8px;font-weight:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:2px}
+.blk b i.ktag{display:inline-flex;align-items:center;justify-content:center;width:11px;height:11px;border-radius:50%;color:#fff;font-size:7px;font-style:normal;flex:0 0 11px}
+.blk b span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.blk small{font-size:7.5px;letter-spacing:-.2px;color:#8B6B5A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.blk.ov{outline:2px dashed #E5533F;outline-offset:-2px;z-index:2}
+.blk.half{padding:2px 2px}
+.blk.half b{white-space:normal;line-height:1.05;font-size:8.6px}
+.blk.half b span{white-space:normal;word-break:break-all;overflow:visible;text-overflow:clip;line-height:1.1}
+.blk.half small{display:none}
+.blk.half .ovb{display:none}
+.legend{display:flex;align-items:center;gap:10px;margin-top:8px;font-size:11.5px;color:var(--ink2)}
+.legend i{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:3px}
+.dis{
+  position:absolute;left:1px;right:1px;height:15px;border-radius:6px;background:#F4F8EA;
+  border:1px dashed #B9CE92;color:#7E9152;font-size:7.5px;letter-spacing:-.2px;display:flex;align-items:center;justify-content:center;gap:2px;overflow:hidden;
+}
+.warn{background:#FFF2ED;border:1px solid #FFD2C4;color:#C2452F;border-radius:13px;padding:9px 11px;font-size:12px;margin-bottom:10px;line-height:1.5}
+.warn b{font-weight:normal;color:#A83A26}
+.empty{text-align:center;padding:22px 12px;color:var(--ink2);font-size:13.5px;line-height:1.7}
+.empty .big{font-size:38px;display:block;margin-bottom:6px}
+
+/* ---------- day memos ---------- */
+.mrow{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+.mrow .dl{font-size:12.5px;color:#C97A5E;width:20px;flex:0 0 20px;text-align:center}
+.mrow .kin{font-size:10.5px;background:#FFF3E8;border:1px solid #FFDFC9;color:#B07A5E;border-radius:7px;padding:1px 5px;flex:0 0 auto}
+.in{
+  width:100%;font-size:14px;padding:9px 11px;border-radius:11px;border:1.5px solid #F6DFC9;
+  background:#FFFDF8;color:var(--ink);outline:none;
+}
+.in:focus{border-color:#FFB79B;background:#fff}
+.in.sm{font-size:13px;padding:7px 9px;border-radius:9px}
+textarea.in{resize:vertical;min-height:64px;line-height:1.5}
+
+/* ---------- buttons ---------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;border:0;border-radius:13px;
+  padding:11px 15px;background:linear-gradient(155deg,#FF8672,#FFA587);color:#fff;font-size:14.5px;
+  box-shadow:0 4px 12px rgba(255,130,105,.3);
+}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:#FFF3E9;color:#CE6A54;border:1.5px solid #FFDCC7;box-shadow:none}
+.btn.sm{padding:7px 11px;font-size:12.5px;border-radius:10px}
+.btn.wide{width:100%}
+.btn.danger{background:#FFF0EE;color:#D2452F;border:1.5px solid #FFCFC7;box-shadow:none}
+.addbar{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fff;border:1px solid #FDEADA;border-radius:16px;padding:12px 14px;box-shadow:var(--shadow);margin-bottom:12px}
+.addbar .t{font-size:15px}
+
+/* ---------- academy cards ---------- */
+.aclisthead{display:flex;align-items:baseline;gap:8px;margin:2px 2px 10px}
+.aclisthead .t{font-size:14.5px}
+.aclisthead .sum{margin-left:auto;color:var(--deep);font-size:13.5px}
+.acard{background:#fff;border-radius:16px;border:1px solid #FDEADA;box-shadow:var(--shadow);padding:12px 13px 12px 15px;margin-bottom:10px;position:relative;overflow:hidden}
+.acard .bar{position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--c)}
+.acard .top{display:flex;align-items:center;gap:7px}
+.acard .nm{font-size:15.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acard .nm .kd{font-size:10.5px;color:#fff;border-radius:7px;padding:1px 6px;margin-right:5px;vertical-align:2px}
+.acard .acts{display:flex;gap:5px;flex:0 0 auto}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:3px 9px;font-size:11.5px;background:#FFF1F1;color:#D8514F}
+.chip.o{background:#FFF4E8;color:#C9793C}
+.chip.g{background:#F3F8EC;color:#7E9152}
+.chip.b{background:#EDF4FD;color:#4E7FC0}
+.chip.n{background:#F7F2EC;color:#8E7767}
+.acard .line{display:flex;align-items:center;gap:6px;font-size:12px;color:#7B5D4D;margin-top:7px;flex-wrap:wrap}
+.acard .memo{margin-top:7px;font-size:12px;color:#8E7767;background:#FFFBF5;border:1px dashed #F3E1CE;border-radius:10px;padding:6px 9px}
+
+/* ---------- form ---------- */
+.form{background:#FFFBF5;border:1px solid #FDE3CE;border-radius:16px;padding:13px;margin-bottom:12px}
+.frow{margin-bottom:10px}
+.flabel{font-size:12.5px;color:#B07A5E;margin-bottom:4px;display:block}
+.f2{display:flex;gap:8px}
+.f2>*{flex:1;min-width:0}
+.daypick{display:flex;gap:4px;flex-wrap:wrap}
+.dp{border:1.5px solid #F6DFC9;background:#fff;border-radius:9px;width:34px;height:32px;font-size:13px;color:#9B8474}
+.dp.on{background:#FFEFE4;border-color:#FFC3A6;color:var(--deep)}
+.dtime{display:flex;align-items:center;gap:5px;margin-bottom:6px}
+.dtime .dl{width:18px;font-size:12.5px;color:#C97A5E;flex:0 0 18px;text-align:center}
+.dtime input[type=time]{flex:0 0 auto;width:96px;font-size:12.5px;padding:6px 4px;border-radius:9px;border:1.5px solid #F6DFC9;background:#fff}
+.dtime .in{flex:1;min-width:0}
+.seg{display:flex;gap:6px}
+.seg button{flex:1;border:1.5px solid #F6DFC9;background:#fff;border-radius:11px;padding:9px 6px;font-size:13px;color:#9B8474}
+.seg button.on{background:#FFEFE4;border-color:#FFC3A6;color:var(--deep)}
+.factions{display:flex;gap:8px;margin-top:12px}
+.factions .btn{flex:1}
+
+/* ---------- calendar ---------- */
+.calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.calhead .m{font-size:17px;color:var(--deep)}
+.navb{border:1.5px solid #FBE0CB;background:#FFF9F1;color:#B07A5E;border-radius:11px;width:34px;height:34px;font-size:15px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cw{text-align:center;font-size:11px;color:#B79A86;padding:1px 0}
+.cw.sun{color:#E06A6A}.cw.sat{color:#5D8FD6}
+.cell{min-height:54px;border-radius:10px;background:#FFFBF5;border:1px solid #FBEBDA;padding:3px;display:flex;flex-direction:column;gap:2px;overflow:hidden;position:relative}
+.cell.out{opacity:.32}
+.cell.today{border:1.5px solid #FF8E77;background:#FFF3E8}
+.cell.sel{box-shadow:0 0 0 2px #FFC9AE inset}
+.cell .dnum{font-size:11px;color:#7A6153}
+.cell .dnum.sun{color:#E06A6A}.cell .dnum.sat{color:#5D8FD6}
+.cell .ev{height:3px;border-radius:2px;width:72%;margin:0 auto}
+.cell .pay{font-size:8px;color:#C2562F;background:#FFEFE2;border-radius:4px;padding:0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.3px}
+.cell .note{font-size:8px;color:#B08A6E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cell .more{font-size:8px;color:#A98D79}
+
+/* ---------- stats ---------- */
+.stat{display:flex;gap:9px;margin-bottom:9px}
+.stat .box{flex:1;background:#FFF6EC;border:1px solid #FBE3CD;border-radius:14px;padding:11px 10px;text-align:center}
+.stat .box .v{font-size:19px;color:var(--deep);line-height:1.2}
+.stat .box .l{font-size:11px;color:var(--ink2);margin-top:2px}
+.bars{display:flex;align-items:flex-end;gap:6px;height:96px;margin:6px 2px 0}
+.bars .b{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px;height:100%}
+.bars .b i{display:block;width:100%;border-radius:7px 7px 3px 3px;background:linear-gradient(180deg,#FFB18C,#FF8A72);min-height:4px}
+.bars .b span{font-size:10.5px;color:var(--ink2)}
+.bars .b em{font-size:10px;color:#C97A5E;font-style:normal}
+.zrow{display:flex;align-items:center;gap:7px;font-size:13px;padding:6px 0;border-bottom:1px dashed #F7E4D2}
+.zrow:last-child{border-bottom:0}
+.zrow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.zrow .money{color:#B0714F;font-size:12.5px}
+
+/* ---------- help ---------- */
+.hitem{display:flex;gap:9px;margin-bottom:11px}
+.hitem .n{flex:0 0 22px;height:22px;border-radius:50%;background:#FFEFE4;color:var(--deep);display:grid;place-items:center;font-size:12px}
+.hitem .tx{font-size:13px;line-height:1.55;color:#6E5447;word-break:keep-all;overflow-wrap:anywhere}
+.hitem .tx b{font-weight:normal;color:#B0523C}
+code{background:#FFF2E6;border-radius:5px;padding:1px 5px;font-size:12px;color:#B0523C;font-family:inherit}
+.syncbox{background:#F6F9FF;border:1px solid #DDE8F8;border-radius:14px;padding:12px}
+.syncbox .st{font-size:12px;margin-top:8px;line-height:1.5}
+.syncbox .st.ok{color:#3D7A54}
+.syncbox .st.no{color:#B4552F}
+
+/* ---------- modal / toast ---------- */
+.modal{position:fixed;inset:0;background:rgba(74,59,51,.42);display:flex;align-items:flex-end;justify-content:center;z-index:60;padding:14px}
+.modal .sheet{background:#FFFDFA;border-radius:20px;padding:16px;width:100%;max-width:420px;box-shadow:0 -6px 30px rgba(120,70,50,.2);max-height:88vh;overflow:auto}
+.modal h3{margin:0 0 12px;font-size:16px;font-weight:normal}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(14px);background:rgba(74,59,51,.92);color:#fff;padding:9px 16px;border-radius:999px;font-size:13px;opacity:0;transition:.22s;z-index:90;pointer-events:none;max-width:86vw;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<header>
+  <div class="hdr-top">
+    <div class="brand">🎒 <span>윤봄 학원 스케줄</span></div>
+    <button class="allbtn" id="btnAll" data-act="all">👥 모두 보기</button>
+  </div>
+  <div class="hdr-date"><span id="todayTxt"></span><span class="wd" id="todayWd"></span></div>
+  <div class="kids" id="kidsRow"></div>
+  <nav class="tabs" id="tabs"></nav>
+</header>
+
+<main id="main"></main>
+
+<div class="modal hidden" id="modal"><div class="sheet" id="sheet"></div></div>
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   🎒 윤봄 학원 스케줄
+   · 저장: 이 기기 localStorage (항상) + (선택) Firebase 실시간 동기화
+   · 동기화 경로: academy/yunbom_schedule_v1  ← 이 경로만 읽고 씁니다
+     (homes/… , ledgers/… 는 코드에 없습니다)
+   ============================================================ */
+const STORE_KEY = 'ybAcademy.state.v1';
+const SYNC_KEY  = 'ybAcademy.sync.v1';
+const DOW = ['일','월','화','수','목','금','토'];
+const DOWLONG = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
+
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDKviQMHHcZiBCHKH_G8YqHWSEZj_NrE2o",
+  authDomain: "family-dashboard-782e7.firebaseapp.com",
+  databaseURL: "https://family-dashboard-782e7-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "family-dashboard-782e7",
+  storageBucket: "family-dashboard-782e7.firebasestorage.app",
+  messagingSenderId: "530235893435",
+  appId: "1:530235893435:web:a5f2030bc6310f1933eb9e"
+};
+const SYNC = {
+  // 이 앱이 읽고 쓰는 곳은 이 잎 경로 하나뿐입니다.
+  // homes/6013b071e038aa90/state, ledgers/ … 는 코드에 존재하지 않습니다.
+  PATH: 'homes/6013b071e038aa90/academy/yunbom_schedule_v1',
+  EMAIL: 'ourhome@family.local',
+  on: false, ready: false, app: null, auth: null, db: null,
+  lastPush: 0, lastRemote: 0, timer: null,
+  SDK: {
+    app: 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js',
+    auth: 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js',
+    db: 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js'
+  }
+};
+
+/* ---------------- state ---------------- */
+function defState(){
+  return {
+    v: 1,
+    kids: [
+      { id:'k1', name:'윤', grade:'초5', color:'#F2705E' },
+      { id:'k2', name:'봄', grade:'초2', color:'#4E9BE8' }
+    ],
+    academies: [],
+    dismissal: { k1:{}, k2:{} },
+    dayMemos: { k1:{}, k2:{} },
+    notes: [],
+    dateMemos: {},
+    ui: { kid:'k1', all:false, tab:'timetable', weekend:false, from:14, to:20 }
+  };
+}
+let S = defState();
+let form = { open:false, id:null, days:[], draft:null };
+let calMonth = null;         // {y,m}
+let calSel = null;           // 'YYYY-MM-DD'
+
+const uid = () => 'a' + Math.random().toString(36).slice(2, 8);
+const $  = s => document.querySelector(s);
+const toMin = t => { if(!t) return null; const [h,m] = String(t).split(':').map(Number); return h*60 + (m||0); };
+const hhmm = t => t || '';
+const fmtWon = n => (Math.round(Number(n)||0)).toLocaleString('ko-KR');
+const pad2 = n => String(n).padStart(2,'0');
+const ymd = d => d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
+
+function load(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw){
+      const p = JSON.parse(raw);
+      S = Object.assign(defState(), p);
+      S.ui = Object.assign(defState().ui, p.ui || {});
+      S.kids = Array.isArray(p.kids) && p.kids.length ? p.kids : defState().kids;
+      ['academies','notes'].forEach(k => { if(!Array.isArray(S[k])) S[k] = []; });
+      ['dismissal','dayMemos','dateMemos'].forEach(k => { if(!S[k] || typeof S[k] !== 'object') S[k] = {}; });
+    }
+  }catch(e){ console.warn('load fail', e); }
+  SYNC.on = localStorage.getItem(SYNC_KEY) === '1';
+}
+let saveTimer = null;
+function save(skipSync){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }catch(e){}
+  if(!skipSync) queueSync();
+}
+
+/* ---------------- helpers ---------------- */
+const kidOf = id => S.kids.find(k => k.id === id);
+function kidName(id){ const k = kidOf(id); return k ? k.name : '?'; }
+function kidColor(id){ const k = kidOf(id); return k ? k.color : '#F2705E'; }
+function tint(hex, a){
+  const h = hex.replace('#','');
+  const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+function activeKids(){ return S.ui.all ? S.kids : S.kids.filter(k => k.id === S.ui.kid); }
+function acsOf(kidId){ return S.academies.filter(a => a.kidId === kidId); }
+function visibleAcs(){ const ks = activeKids().map(k => k.id); return S.academies.filter(a => ks.includes(a.kidId)); }
+function lessonsOn(dow, acs){
+  const out = [];
+  (acs || visibleAcs()).forEach(a => {
+    (a.days||[]).forEach(d => {
+      if(Number(d.d) === Number(dow)) out.push({ ac:a, day:d, start:d.start, end:d.end });
+    });
+  });
+  return out;
+}
+function nowMin(){ const d = new Date(); return d.getHours()*60 + d.getMinutes(); }
+function durationHours(a){
+  return (a.days||[]).reduce((s,d) => {
+    const x = toMin(d.start), y = toMin(d.end);
+    return s + (x!=null && y!=null && y>x ? (y-x)/60 : 0);
+  }, 0);
+}
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._tm); t._tm = setTimeout(() => t.classList.remove('show'), 1900);
+}
+
+/* ============================================================
+   Firebase 동기화 (선택)
+   ============================================================ */
+function loadScript(src){
+  return new Promise((res, rej) => {
+    if(document.querySelector('script[data-src="'+src+'"]')) return res();
+    const s = document.createElement('script');
+    s.src = src; s.async = true; s.dataset.src = src;
+    s.onload = () => res(); s.onerror = () => rej(new Error('불러오기 실패: ' + src));
+    document.head.appendChild(s);
+  });
+}
+function queueSync(){
+  if(!SYNC.ready) return;
+  clearTimeout(SYNC.timer);
+  SYNC.timer = setTimeout(pushSync, 700);
+}
+function pushSync(){
+  if(!SYNC.ready || !SYNC.db) return;
+  SYNC.lastPush = Date.now();
+  SYNC.db.ref(SYNC.PATH).set({ v:1, updatedAt: Date.now(), data: S })
+    .catch(e => { setSyncStatus('warn', '저장이 막혔어요: ' + (e && e.message ? e.message : e)); });
+}
+function applyRemote(remote){
+  const payload = remote && (remote.data || remote.state);
+  if(!payload) return false;
+  const rt = Number(remote.updatedAt || 0);
+  if(rt > SYNC.lastRemote){ SYNC.lastRemote = rt; }
+  const localT = Number(S.updatedAt || 0);
+  if(!localT || rt > localT){
+    const keepUi = S.ui;
+    S = Object.assign(defState(), payload);
+    S.ui = Object.assign(defState().ui, keepUi, payload.ui || {});
+    ['academies','notes'].forEach(k => { if(!Array.isArray(S[k])) S[k] = []; });
+    localStorage.setItem(STORE_KEY, JSON.stringify(S));
+    render();
+    return true;
+  }
+  return false;
+}
+function setSyncStatus(kind, msg){
+  const el = $('#syncSt');
+  if(!el) { if(msg) toast(msg); return; }
+  el.className = 'st ' + (kind === 'ok' ? 'ok' : kind === 'warn' ? 'no' : '');
+  el.textContent = msg;
+}
+async function syncStart(pw){
+  if(!pw || pw.length < 4) { setSyncStatus('warn','가족 암호를 넣어 주세요 (4자 이상)'); return; }
+  setSyncStatus('','연결하는 중…');
+  try{
+    if(!window.firebase){
+      await loadScript(SYNC.SDK.app);
+      await loadScript(SYNC.SDK.auth);
+      await loadScript(SYNC.SDK.db);
+    }
+    if(!SYNC.app) SYNC.app = firebase.initializeApp(FIREBASE_CONFIG, 'academySchedule');
+    SYNC.auth = firebase.auth(SYNC.app);
+    SYNC.db = firebase.database(SYNC.app);
+    try{
+      await SYNC.auth.signInWithEmailAndPassword(SYNC.EMAIL, String(pw));
+    }catch(e){
+      const c = e && e.code;
+      if(['auth/wrong-password','auth/invalid-credential','auth/invalid-login-credentials'].includes(c)){
+        setSyncStatus('warn','가족 암호가 맞지 않아요'); return;
+      }
+      if(c === 'auth/too-many-requests'){ setSyncStatus('warn','잠시 뒤에 다시 해 주세요'); return; }
+      throw e;
+    }
+    const snap = await SYNC.db.ref(SYNC.PATH).once('value');
+    // 읽기가 통과했다면 이 기기 데이터와 서버 데이터를 합칩니다
+    const remote = snap.val();
+    SYNC.ready = true;
+    localStorage.setItem(SYNC_KEY, '1');
+    SYNC.on = true;
+    if(remote && (remote.data || remote.state)){
+      S.updatedAt = S.updatedAt || 0;
+      if(!applyRemote(remote)) pushSync();
+    }else{
+      pushSync();
+    }
+    SYNC.db.ref(SYNC.PATH).on('value', s => {
+      const v = s.val();
+      if(v && v.updatedAt && v.updatedAt > (S.updatedAt || 0)) applyRemote(v);
+    });
+    setSyncStatus('ok','☁️ 동기화 켜짐 · 가족 폰과 함께 보고 있어요');
+    render();
+  }catch(e){
+    SYNC.ready = false; SYNC.on = false; localStorage.removeItem(SYNC_KEY);
+    const m = (e && (e.code || e.message)) || '알 수 없는 오류';
+    setSyncStatus('warn','지금은 이 기기에만 저장돼요 · 동기화 경로가 아직 열리지 않았어요 (' + m + ')');
+    render();
+  }
+}
+async function syncResume(){
+  try{
+    if(!window.firebase){
+      await loadScript(SYNC.SDK.app);
+      await loadScript(SYNC.SDK.auth);
+      await loadScript(SYNC.SDK.db);
+    }
+    if(!SYNC.app) SYNC.app = firebase.initializeApp(FIREBASE_CONFIG, 'academySchedule');
+    SYNC.auth = firebase.auth(SYNC.app);
+    SYNC.db = firebase.database(SYNC.app);
+    SYNC.auth.onAuthStateChanged(async user => {
+      if(!user){ SYNC.on = false; localStorage.removeItem(SYNC_KEY); return; }
+      try{
+        const snap = await SYNC.db.ref(SYNC.PATH).once('value');
+        SYNC.ready = true; SYNC.on = true;
+        applyRemote(snap.val());
+        SYNC.db.ref(SYNC.PATH).on('value', s => applyRemote(s.val()));
+      }catch(e){ SYNC.ready = false; }
+    });
+  }catch(e){ /* 조용히 로컬 모드로 */ }
+}
+function syncStop(){
+  SYNC.ready = false; SYNC.on = false; localStorage.removeItem(SYNC_KEY);
+  try{ if(SYNC.db) SYNC.db.ref(SYNC.PATH).off(); }catch(e){}
+  toast('이 기기에만 저장할게요');
+  render();
+}
+
+/* ============================================================
+   Header
+   ============================================================ */
+const TABS = [
+  { id:'timetable', label:'📅 시간표' },
+  { id:'academy',   label:'🏫 학원' },
+  { id:'calendar',  label:'📆 캘린더' },
+  { id:'memo',      label:'📝 메모장' },
+  { id:'stats',     label:'📊 내 통계' },
+  { id:'help',      label:'❓ 도움말' }
+];
+function renderHeader(){
+  const d = new Date();
+  $('#todayTxt').textContent = d.getFullYear() + '년 ' + (d.getMonth()+1) + '월 ' + d.getDate() + '일';
+  $('#todayWd').textContent = DOWLONG[d.getDay()];
+  $('#btnAll').className = 'allbtn' + (S.ui.all ? ' on' : '');
+  $('#btnAll').textContent = S.ui.all ? '👥 모두 보기 중' : '👥 모두 보기';
+
+  const kr = S.kids.map(k => {
+    const on = !S.ui.all && k.id === S.ui.kid;
+    return `<button class="kid${on?' on':''}" data-act="kid" data-id="${k.id}">
+      <i class="dot" style="background:${k.color}"></i>${esc(k.name)}<span class="gr">${esc(k.grade||'')}</span>
+    </button>`;
+  }).join('');
+  const editBtn = S.ui.all || !kidOf(S.ui.kid) ? '' : `<button class="kid" data-act="editkid" data-id="${S.ui.kid}" title="아이 정보 고치기">✏️</button>`;
+  $('#kidsRow').innerHTML = kr + editBtn + `<button class="kidadd" data-act="addkid">＋ 아이 추가</button>`;
+
+  $('#tabs').innerHTML = TABS.map(t =>
+    `<button class="tab${S.ui.tab===t.id?' on':''}" data-act="tab" data-id="${t.id}">${t.label}</button>`
+  ).join('');
+}
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ============================================================
+   📅 시간표
+   ============================================================ */
+function eventsToday(){
+  const dow = new Date().getDay();
+  const ev = [];
+  activeKids().forEach(k => {
+    acsOf(k.id).forEach(a => {
+      (a.days||[]).forEach(d => {
+        if(Number(d.d) !== dow) return;
+        const tr = a.transport || {};
+        if(tr.type === 'shuttle' && tr.depart){
+          ev.push({ t: toMin(tr.depart), kind:'shuttle', kid:k, ac:a, place:tr.from || '', time:tr.depart, end:toMin(tr.arrive || d.start) });
+        }
+        ev.push({ t: toMin(d.start), kind:'lesson', kid:k, ac:a, place: tr.type === 'walk' ? '도보' : (tr.to || ''), time:d.start, end: toMin(d.end) });
+      });
+    });
+  });
+  return ev.filter(e => e.t != null).sort((a,b) => a.t - b.t);
+}
+function hm(m){ return pad2(Math.floor(m/60)) + ':' + pad2(m%60); }
+function leftTxt(mins){
+  if(mins < 0) return '';
+  if(mins < 60) return mins + '분 남았어요';
+  const h = Math.floor(mins/60), m = mins%60;
+  return h + '시간' + (m ? ' ' + m + '분' : '') + ' 남았어요';
+}
+function todayCard(){
+  const ev = eventsToday();
+  const now = nowMin();
+  const dow = DOWLONG[new Date().getDay()];
+  let head = '';
+  if(!ev.length){
+    head = `<div class="tl-kicker">오늘 · ${dow}</div>
+      <div class="tl-big">오늘은 학원 없는 날 🎉</div>
+      <div class="tl-sub">🏫 학원 탭에서 일정을 추가해 보세요</div>`;
+    return `<section class="card tl">${head}</section>`;
+  }
+  const inLesson = ev.find(e => e.kind === 'lesson' && e.t <= now && e.end > now);
+  const next = ev.find(e => e.t >= now);
+  if(inLesson){
+    head = `<div class="tl-kicker">지금 수업 중 · ${dow}</div>
+      <div class="tl-big">${esc(inLesson.ac.name)}</div>
+      <div class="tl-sub">${esc(inLesson.kid.name)} · ${inLesson.time}~${hm(inLesson.end)} · ${inLesson.end - now}분 뒤 끝나요</div>`;
+  }else if(next){
+    const what = next.kind === 'shuttle' ? ' 셔틀' : '';
+    head = `<div class="tl-kicker">다음 일정 · 오늘 ${dow}</div>
+      <div class="tl-big">${next.time} ${esc(next.ac.name)}${what}</div>
+      <div class="tl-sub">${next.kind === 'shuttle' ? '📍 ' + esc(next.place) + ' · ' : (next.place ? '📍 ' + esc(next.place) + ' · ' : '')}${esc(next.kid.name)}</div>
+      <div class="tl-left">${leftTxt(next.t - now)}</div>`;
+  }else{
+    head = `<div class="tl-kicker">오늘 · ${dow}</div>
+      <div class="tl-big">오늘 일정 다 끝났어요 🌙</div>
+      <div class="tl-sub">수고했어요! 내일 일정은 시간표에서 볼 수 있어요</div>`;
+  }
+  const rows = ev.map(e => {
+    const done = (e.kind === 'lesson' ? e.end : e.t) < now;
+    const label = e.kind === 'shuttle' ? (esc(e.ac.name) + ' 셔틀 · ' + esc(e.place)) : (esc(e.ac.name) + (e.place && e.place !== '도보' ? ' · ' + esc(e.place) : ''));
+    return `<div class="tl-row${done?' done':''}">
+      <span class="t">${e.time}</span>
+      <span class="ic">${e.kind === 'shuttle' ? '🚌' : '🏫'}</span>
+      <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${label}</span>
+      <span class="kchip" style="color:${e.kid.color}">${esc(e.kid.name)}</span>
+    </div>`;
+  }).join('');
+  return `<section class="card tl">${head}<div class="tl-list">${rows}</div></section>`;
+}
+
+function overlapsFor(dow, lessons){
+  const res = [];
+  for(let i=0;i<lessons.length;i++){
+    for(let j=i+1;j<lessons.length;j++){
+      const a = lessons[i], b = lessons[j];
+      if(a.ac.kidId === b.ac.kidId) continue;
+      const s1 = toMin(a.start), e1 = toMin(a.end), s2 = toMin(b.start), e2 = toMin(b.end);
+      if(s1 == null || s2 == null || e1 == null || e2 == null) continue;
+      const s = Math.max(s1, s2), e = Math.min(e1, e2);
+      if(e > s) res.push({ a, b, s, e });
+    }
+  }
+  return res;
+}
+function weekCard(){
+  const weekend = !!S.ui.weekend;
+  const days = weekend ? [1,2,3,4,5,6,0] : [1,2,3,4,5];
+  const from = Number(S.ui.from), to = Number(S.ui.to);
+  const H = 62, totalH = (to - from) * H;
+  const kidsSel = activeKids();
+
+  // 겹침 모음
+  let warns = [];
+  if(S.ui.all){
+    days.forEach(d => {
+      const ls = lessonsOn(d, visibleAcs());
+      overlapsFor(d, ls).forEach(o => warns.push({ d, o }));
+    });
+  }
+  const warnHtml = warns.length ? `<div class="warn">👥 <b>같은 시간에 겹치는 일정이 있어요</b><br>` +
+    warns.map(w => `${DOW[w.d]} ${hm(w.o.s)}~${hm(w.o.e)} · ${esc(w.o.a.ac.name)}(${esc(kidName(w.o.a.ac.kidId))}) ↔ ${esc(w.o.b.ac.name)}(${esc(kidName(w.o.b.ac.kidId))})`).join('<br>') +
+    `</div>` : '';
+
+  const headCells = days.map(d => {
+    const cls = d === 0 ? ' sun' : d === 6 ? ' sat' : '';
+    return `<div class="dh${cls}">${DOW[d]}</div>`;
+  }).join('');
+
+  const hourLines = `<div class="lines" style="background:repeating-linear-gradient(to bottom, rgba(240,190,150,.30) 0 1px, transparent 1px ${H}px)"></div>`;
+  const gutterLabels = [];
+  for(let h = from; h < to; h++){
+    gutterLabels.push(`<b style="top:${(h - from) * H}px">${h}:00</b>`);
+  }
+
+  const cols = days.map(d => {
+    const ls = lessonsOn(d, visibleAcs());
+    const ovs = overlapsFor(d, ls);
+    const partner = {};   // 'acId|start' -> [상대 학원 이름]
+    ovs.forEach(o => {
+      const ka = o.a.ac.id + '|' + o.a.start, kb = o.b.ac.id + '|' + o.b.start;
+      (partner[ka] = partner[ka] || []).push(o.b.ac.name);
+      (partner[kb] = partner[kb] || []).push(o.a.ac.name);
+    });
+
+    let blocks = '';
+    // 하교 시간 표시
+    kidsSel.forEach(k => {
+      const t = (S.dismissal[k.id] || {})[d];
+      if(t){
+        const top = (toMin(t) - from*60)/60*H;
+        if(top >= -8 && top <= totalH){
+          blocks += `<div class="dis" style="top:${Math.max(0, top - 7)}px">${S.ui.all?esc(k.name)+' ':''}하교 ${t}</div>`;
+        }
+      }
+    });
+    ls.forEach(l => {
+      const s = toMin(l.start), e = toMin(l.end);
+      if(s == null || e == null) return;
+      if(e <= from*60 || s >= to*60) return;
+      const top = Math.max(0, (s - from*60)/60*H);
+      const bottom = Math.min(totalH, (e - from*60)/60*H);
+      const h = Math.max(22, bottom - top - 3);
+      const k = kidOf(l.ac.kidId) || { color:'#F2705E', name:'?' };
+      const tr = l.ac.transport || {};
+      const key = l.ac.id + '|' + l.start;
+      const isOv = !!partner[key];
+      const grp = isOv ? ovs.filter(o => o.a.ac.id + '|' + o.a.start === key || o.b.ac.id + '|' + o.b.start === key) : [];
+      let laneCls = '', laneStyle = '';
+      if(grp.length === 1){
+        const idx = (grp[0].a.ac.id + '|' + grp[0].a.start === key) ? grp[0].a : grp[0].b;
+        const lane = idx.ac.kidId === (S.kids[0] || {}).id ? 0 : 1;
+        laneCls = ' half';
+        laneStyle = lane === 0 ? 'left:2px;width:calc(50% - 3px)' : 'left:calc(50% + 1px);width:calc(50% - 3px)';
+      }
+      const trTxt = tr.type === 'shuttle'
+        ? `<small>🚌${tr.depart ? ' ' + tr.depart : ' 셔틀'}</small>`
+        : `<small>🚶 도보</small>`;
+      const memo = l.day && l.day.memo ? `<small>📌 ${esc(l.day.memo)}</small>` : '';
+      blocks += `<div class="blk${isOv?' ov':''}${laneCls}" style="top:${top}px;height:${h}px;--c:${k.color};--bg:${tint(k.color, .13)};${laneStyle}" data-act="editac" data-id="${l.ac.id}">
+        <b><span>${esc(l.ac.name)}</span></b>
+        <small>${l.start}~${l.end}</small>
+        ${trTxt}${memo}
+      </div>`;
+    });
+    return `<div class="daycol" style="height:${totalH}px">${hourLines}${blocks}</div>`;
+  }).join('');
+
+  const emptyHint = !visibleAcs().length
+    ? `<div class="empty"><span class="big">🕒</span>아직 등록된 학원이 없어요<br>아래 <b>🏫 학원</b> 탭에서 <b>+ 학원 추가</b>로 시작해 보세요</div>`
+    : '';
+
+  const dayMemoRows = renderDayMemoRows(days);
+
+  const fromOpts = Array.from({length:24}, (_,i) => `<option value="${i}"${i===from?' selected':''}>${i}시</option>`).join('');
+  const toOpts   = Array.from({length:25}, (_,i) => `<option value="${i}"${i===to?' selected':''}>${i===24?'24시':i+'시'}</option>`).join('');
+
+  return `
+  <section class="card">
+    <h2>📅 주간 시간표 <span class="sub">${weekend?'월~일':'월~금'}</span></h2>
+    <div class="ctrlrow">
+      <button class="tog${weekend?' on':''}" data-act="weekend">🗓 주말 보기</button>
+      <span class="rnglbl">범위</span>
+      <select class="sel" id="selFrom">${fromOpts}</select>
+      <span class="rnglbl">~</span>
+      <select class="sel" id="selTo">${toOpts}</select>
+    </div>
+    ${warnHtml}
+    ${emptyHint}
+    <div class="tt">
+      <div class="dayrow">
+        <div class="sp"></div>
+        ${headCells}
+      </div>
+      <div class="cols">
+        <div class="gutter" style="height:${totalH}px">${hourLines}${gutterLabels.join('')}</div>
+        <div class="gridwrap"><div class="cols" style="display:flex">${cols}</div></div>
+      </div>
+    </div>
+    <div class="muted" style="margin-top:8px">💡 블록을 누르면 학원 정보를 고칠 수 있어요</div>
+    ${S.ui.all ? `<div class="legend">${S.kids.map(k => `<span><i style="background:${k.color}"></i>${esc(k.name)}</span>`).join('')}<span style="margin-left:auto;color:#C2452F;font-size:11px">빨간 점선 = 시간이 겹쳐요</span></div>` : ''}
+  </section>
+  <section class="card">
+    <h2>📌 요일별 준비물·메모</h2>
+    ${dayMemoRows}
+  </section>
+  ${disCard(days)}`;
+}
+function disCard(days){
+  const ks = activeKids();
+  const open = !!S.ui.disOpen;
+  const chips = ks.map(k => {
+    const items = days.map(d => {
+      const t = (S.dismissal[k.id] || {})[d];
+      return t ? `<span class="chip n">${DOW[d]} ${t}</span>` : '';
+    }).join('');
+    return `<div style="margin-bottom:6px"><span class="muted" style="color:${k.color}">${esc(k.name)}</span>
+      <div class="chips">${items || '<span class="chip n">아직 없음</span>'}</div></div>`;
+  }).join('');
+  const inputs = ks.map(k => `<div class="frow" style="margin-top:8px">
+      <span class="flabel" style="color:${k.color}">${esc(k.name)} 하교 시간 (월~금)</span>
+      <div class="f2" style="flex-wrap:wrap;gap:5px">
+        ${[1,2,3,4,5].map(d => `<input class="in sm" type="time" data-dis="${k.id}|${d}" value="${esc((S.dismissal[k.id]||{})[d]||'')}" style="flex:1;min-width:84px;font-size:12px;padding:6px 5px">`).join('')}
+      </div>
+    </div>`).join('');
+  return `<section class="card">
+    <h2>🏫 하교 시간 <span class="sub"></span>
+      <button class="btn ghost sm" style="margin-left:auto" data-act="distoggle">${open ? '접기 ▴' : '고치기 ▾'}</button></h2>
+    ${open ? inputs : (chips || '<div class="muted">아이가 없어요</div>')}
+  </section>`;
+}
+function renderDayMemoRows(days){
+  const ks = activeKids();
+  const rows = [];
+  days.forEach(d => {
+    if(S.ui.all){
+      ks.forEach(k => {
+        const v = ((S.dayMemos[k.id]||{})[d]) || '';
+        rows.push(`<div class="mrow">
+          <span class="dl">${DOW[d]}</span>
+          <span class="kin" style="color:${k.color}">${esc(k.name)}</span>
+          <input class="in sm" data-daymemo="${k.id}|${d}" value="${esc(v)}" placeholder="예) 줄넘기 · 받아쓰기 준비">
+        </div>`);
+      });
+    }else{
+      const k = ks[0]; if(!k) return;
+      const v = ((S.dayMemos[k.id]||{})[d]) || '';
+      rows.push(`<div class="mrow">
+        <span class="dl">${DOW[d]}</span>
+        <input class="in sm" data-daymemo="${k.id}|${d}" value="${esc(v)}" placeholder="예) 줄넘기 · 받아쓰기 준비">
+      </div>`);
+    }
+  });
+  return rows.join('') || '<div class="muted">표시할 요일이 없어요</div>';
+}
+
+/* ============================================================
+   🏫 학원
+   ============================================================ */
+function acTypeChip(a){
+  const tr = a.transport || {};
+  if(tr.type === 'shuttle'){
+    return `<span class="chip g">🚌 ${esc(tr.depart||'')}${tr.arrive?' → '+esc(tr.arrive):''}${tr.from? ' · '+esc(tr.from):''}${tr.to? ' → '+esc(tr.to):''}</span>`;
+  }
+  return `<span class="chip g">🚶 도보</span>`;
+}
+function academyTab(){
+  const ks = activeKids();
+  const list = visibleAcs();
+  const total = list.reduce((s,a) => s + (Number(a.fee)||0), 0);
+  const formHtml = form.open ? academyForm() : '';
+  const cards = list.length ? list.map(a => {
+    const k = kidOf(a.kidId) || { color:'#F2705E', name:'?' };
+    const dayChips = (a.days||[]).map(d =>
+      `<span class="chip">${DOW[d.d]} ${d.start}~${d.end}${d.memo?' · '+esc(d.memo):''}</span>`).join('');
+    return `<div class="acard" style="--c:${k.color}">
+      <i class="bar" style="background:${k.color}"></i>
+      <div class="top">
+        <div class="nm"><span class="kd" style="background:${k.color}">${esc(k.name)}</span>${esc(a.name)}</div>
+        <div class="acts">
+          <button class="btn ghost sm" data-act="editac" data-id="${a.id}">✏️ 수정</button>
+          <button class="btn danger sm" data-act="delac" data-id="${a.id}">삭제</button>
+        </div>
+      </div>
+      <div class="chips">${dayChips}</div>
+      <div class="chips">
+        <span class="chip o">💰 ${fmtWon(a.fee)}원</span>
+        <span class="chip n">${esc(a.pay || '계좌이체')}</span>
+        ${a.payDay ? `<span class="chip n">매월 ${a.payDay}일</span>` : ''}
+      </div>
+      <div class="line">${acTypeChip(a)}</div>
+      ${a.memo ? `<div class="memo">📝 ${esc(a.memo)}</div>` : ''}
+    </div>`;
+  }).join('') : `<div class="empty"><span class="big">🏫</span>등록된 학원이 없어요<br>위의 <b>+ 학원 추가</b>를 눌러 첫 학원을 넣어 보세요<br><br><button class="btn ghost sm" data-act="sample">✨ 예시로 채워 보기</button></div>`;
+
+  return `
+  <div class="addbar">
+    <div class="t">🏫 학원 관리</div>
+    <button class="btn sm" data-act="toggleform">${form.open ? '닫기 ▴' : '＋ 학원 추가'}</button>
+  </div>
+  ${formHtml}
+  <div class="aclisthead">
+    <span class="t">📋 등록된 학원 ${list.length}개</span>
+    <span class="sum">월 합계 ${fmtWon(total)}원</span>
+  </div>
+  ${cards}`;
+}
+function academyForm(){
+  const d = form.draft || {};
+  const kidsOpt = S.kids.map(k => `<option value="${k.id}"${(d.kidId||S.ui.kid)===k.id?' selected':''}>${esc(k.name)} (${esc(k.grade||'')})</option>`).join('');
+  const payOpt = ['계좌이체','카드','직접납부'].map(p => `<option value="${p}"${(d.pay||'계좌이체')===p?' selected':''}>${p}</option>`).join('');
+  const dayOpts = Array.from({length:28}, (_,i) => { const v=i+1; return `<option value="${v}"${Number(d.payDay)===v?' selected':''}>${v}</option>`; }).join('');
+  const dayBtns = [1,2,3,4,5,6,0].map(n =>
+    `<button type="button" class="dp${form.days.includes(n)?' on':''}" data-act="fday" data-id="${n}">${DOW[n]}</button>`).join('');
+  const times = [1,2,3,4,5,6,0].filter(n => form.days.includes(n)).map(n => {
+    const t = (d.times || {})[n] || {};
+    return `<div class="dtime">
+      <span class="dl">${DOW[n]}</span>
+      <input type="time" data-ft="s" data-fd="${n}" value="${esc(t.start||'')}">
+      <input type="time" data-ft="e" data-fd="${n}" value="${esc(t.end||'')}">
+      <input class="in sm" data-ft="m" data-fd="${n}" value="${esc(t.memo||'')}" placeholder="준비물">
+    </div>`;
+  }).join('');
+  const tr = d.transport || { type:'shuttle' };
+  return `<div class="form">
+    <div class="frow"><span class="flabel">아이</span><select class="in sm" id="f-kid">${kidsOpt}</select></div>
+    <div class="frow"><span class="flabel">학원 이름</span>
+      <input class="in" id="f-name" value="${esc(d.name||'')}" placeholder="예) 영어학원"></div>
+    <div class="frow"><span class="flabel">요일 (여러 개 고를 수 있어요)</span>
+      <div class="daypick">${dayBtns}</div>
+      ${times ? `<div style="margin-top:8px">${times}</div>` : ''}
+    </div>
+    <div class="f2 frow">
+      <div><span class="flabel">학원비(원)</span><input class="in sm" id="f-fee" type="number" inputmode="numeric" value="${esc(d.fee||'')}" placeholder="350000"></div>
+      <div><span class="flabel">납부 방식</span><select class="in sm" id="f-pay">${payOpt}</select></div>
+    </div>
+    <div class="frow"><span class="flabel">결제일 (매월)</span>
+      <select class="in sm" id="f-day"><option value="">없음</option>${dayOpts}</select></div>
+    <div class="frow"><span class="flabel">이동 방법</span>
+      <div class="seg">
+        <button type="button" class="tog${tr.type!=='walk'?' on':''}" data-act="ftr" data-id="shuttle">🚌 셔틀버스</button>
+        <button type="button" class="tog${tr.type==='walk'?' on':''}" data-act="ftr" data-id="walk">🚶 도보</button>
+      </div>
+    </div>
+    ${tr.type === 'walk' ? '' : `
+    <div class="f2 frow">
+      <div><span class="flabel">셔틀 출발</span><input class="in sm" id="f-dep" type="time" value="${esc(tr.depart||'')}"></div>
+      <div><span class="flabel">셔틀 도착</span><input class="in sm" id="f-arr" type="time" value="${esc(tr.arrive||'')}"></div>
+    </div>
+    <div class="f2 frow">
+      <div><span class="flabel">승차 장소</span><input class="in sm" id="f-from" value="${esc(tr.from||'')}" placeholder="아파트 정문"></div>
+      <div><span class="flabel">하차 장소</span><input class="in sm" id="f-to" value="${esc(tr.to||'')}" placeholder="학원 앞"></div>
+    </div>`}
+    <div class="frow"><span class="flabel">학원 메모</span>
+      <input class="in sm" id="f-memo" value="${esc(d.memo||'')}" placeholder="예) 숙제 확인"></div>
+    <div class="factions">
+      <button class="btn ghost" data-act="closeform">취소</button>
+      <button class="btn" data-act="saveac">${form.id ? '수정 저장' : '학원 추가'}</button>
+    </div>
+  </div>`;
+}
+function collectForm(){
+  const d = form.draft || {};
+  const g = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+  d.kidId = g('f-kid') || S.ui.kid;
+  d.name = g('f-name').trim();
+  d.fee = Number(g('f-fee')) || 0;
+  d.pay = g('f-pay') || '계좌이체';
+  d.payDay = g('f-day') ? Number(g('f-day')) : '';
+  d.memo = g('f-memo');
+  const trType = (d.transport && d.transport.type) || 'shuttle';
+  const prevTr = d.transport || {};
+  d.transport = {
+    type: trType,
+    depart: document.getElementById('f-dep') ? g('f-dep') : (prevTr.depart || ''),
+    arrive: document.getElementById('f-arr') ? g('f-arr') : (prevTr.arrive || ''),
+    from:   document.getElementById('f-from') ? g('f-from') : (prevTr.from || ''),
+    to:     document.getElementById('f-to') ? g('f-to') : (prevTr.to || '')
+  };
+  d.times = d.times || {};
+  form.days.forEach(n => {
+    const s = document.querySelector(`[data-ft="s"][data-fd="${n}"]`);
+    const e = document.querySelector(`[data-ft="e"][data-fd="${n}"]`);
+    const m = document.querySelector(`[data-ft="m"][data-fd="${n}"]`);
+    d.times[n] = { start: s ? s.value : '', end: e ? e.value : '', memo: m ? m.value : '' };
+  });
+  form.draft = d;
+  return d;
+}
+function openAcForm(ac){
+  if(ac){
+    const times = {};
+    const days = [];
+    (ac.days||[]).forEach(x => { days.push(Number(x.d)); times[Number(x.d)] = { start:x.start, end:x.end, memo:x.memo||'' }; });
+    form = { open:true, id:ac.id, days, draft: JSON.parse(JSON.stringify(ac)) };
+    form.draft.times = times;
+  }else{
+    form = { open:true, id:null, days:[1,3,5], draft: JSON.parse(JSON.stringify({ name:'', fee:'', pay:'계좌이체', payDay:'', memo:'', transport:{ type:'shuttle', depart:'', arrive:'', from:'아파트 정문', to:'' }, kidId:S.ui.all ? (S.kids[0]||{}).id : S.ui.kid })) };
+    form.draft.times = {1:{start:'',end:'',memo:''},3:{start:'',end:'',memo:''},5:{start:'',end:'',memo:''}};
+  }
+}
+function saveAcForm(){
+  const d = collectForm();
+  if(!d.name){ toast('학원 이름을 넣어 주세요'); return; }
+  const days = form.days.slice().sort((a,b)=> (a||7) - (b||7)).map(n => {
+    const t = (d.times||{})[n] || {};
+    return { d:n, start:t.start||'', end:t.end||'', memo:(t.memo||'').trim() };
+  });
+  if(!days.length){ toast('요일을 하나 이상 골라 주세요'); return; }
+  if(days.some(x => !x.start || !x.end)){ toast('요일별 시작·끝 시간을 넣어 주세요'); return; }
+  const ac = {
+    id: form.id || uid(),
+    kidId: d.kidId,
+    name: d.name,
+    days,
+    fee: Number(d.fee)||0,
+    pay: d.pay,
+    payDay: d.payDay || '',
+    transport: d.transport || { type:'walk' },
+    memo: (d.memo||'').trim()
+  };
+  if(form.id){
+    const i = S.academies.findIndex(a => a.id === form.id);
+    if(i >= 0) S.academies[i] = ac; else S.academies.push(ac);
+    toast('학원 정보를 고쳤어요');
+  }else{
+    S.academies.push(ac);
+    toast('학원을 추가했어요');
+  }
+  form = { open:false, id:null, days:[], draft:null };
+  S.updatedAt = Date.now();
+  save(); render();
+}
+function sampleData(){
+  const k1 = S.kids[0], k2 = S.kids[1] || S.kids[0];
+  if(!k1) return;
+  S.academies.push({
+    id: uid(), kidId: k1.id, name:'영어학원',
+    days:[{d:1,start:'15:30',end:'17:00',memo:''},{d:3,start:'15:30',end:'17:00',memo:'줄넘기'},{d:5,start:'15:30',end:'17:00',memo:'받아쓰기'}],
+    fee:350000, pay:'계좌이체', payDay:15,
+    transport:{ type:'shuttle', depart:'15:00', arrive:'15:20', from:'아파트 정문', to:'학원 앞' }, memo:'숙제 확인'
+  });
+  S.academies.push({
+    id: uid(), kidId: k2.id, name:'수학학원',
+    days:[{d:2,start:'16:00',end:'17:30',memo:''},{d:4,start:'16:00',end:'17:30',memo:'연산 2장'}],
+    fee:280000, pay:'직접납부', payDay:5,
+    transport:{ type:'walk' }, memo:''
+  });
+  S.academies.push({
+    id: uid(), kidId: k1.id, name:'피아노',
+    days:[{d:2,start:'16:00',end:'17:00',memo:'악보 챙기기'},{d:4,start:'16:00',end:'17:00',memo:''}],
+    fee:120000, pay:'카드', payDay:10,
+    transport:{ type:'walk' }, memo:''
+  });
+  S.dismissal[k1.id] = { 1:'14:30', 2:'14:30', 3:'14:30', 4:'14:30', 5:'14:30' };
+  S.dismissal[k2.id] = { 1:'13:40', 2:'13:40', 3:'13:40', 4:'13:40', 5:'13:40' };
+  S.dayMemos[k2.id] = { 3:'줄넘기 · 체육복' };
+  S.updatedAt = Date.now();
+  save(); render(); toast('예시 일정을 채웠어요 · 자유롭게 고치세요');
+}
+
+/* ============================================================
+   📆 캘린더
+   ============================================================ */
+function monthInfo(){
+  const n = new Date();
+  if(!calMonth) calMonth = { y:n.getFullYear(), m:n.getMonth() };
+  return calMonth;
+}
+function calendarTab(){
+  const { y, m } = monthInfo();
+  const first = new Date(y, m, 1);
+  const startDow = first.getDay();
+  const daysIn = new Date(y, m + 1, 0).getDate();
+  const prevDays = new Date(y, m, 0).getDate();
+  const todayStr = ymd(new Date());
+  const cells = [];
+  for(let i = 0; i < startDow; i++){
+    const dn = prevDays - startDow + 1 + i;
+    cells.push({ d: dn, out: true, date: new Date(y, m - 1, dn) });
+  }
+  for(let dn = 1; dn <= daysIn; dn++) cells.push({ d: dn, out:false, date: new Date(y, m, dn) });
+  while(cells.length % 7 !== 0) {
+    const dn = cells.length - (startDow + daysIn) + 1;
+    cells.push({ d: dn, out:true, date: new Date(y, m + 1, dn) });
+  }
+  const acs = visibleAcs();
+  const paylist = [];
+  const cellHtml = cells.map(c => {
+    const dow = c.date.getDay();
+    const ls = lessonsOn(dow, acs);
+    const pays = acs.filter(a => a.payDay && Number(a.payDay) === c.d);
+    const ds = ymd(c.date);
+    const note = S.dateMemos[ds] || '';
+    if(!c.out && pays.length) paylist.push({ d:c.d, pays });
+    const dots = ls.slice(0,3).map(l => `<i class="ev" style="background:${kidColor(l.ac.kidId)};opacity:.75"></i>`).join('');
+    const more = ls.length > 3 ? `<span class="more">+${ls.length-3}</span>` : '';
+    const payHtml = pays.length ? `<span class="pay">학원비${pays.length>1?' '+pays.length:''}</span>` : '';
+    const noteHtml = note ? `<span class="note">${esc(note).slice(0,6)}</span>` : '';
+    return `<button class="cell${c.out?' out':''}${ds===todayStr?' today':''}${ds===calSel?' sel':''}" data-act="date" data-id="${ds}">
+      <span class="dnum${dow===0?' sun':dow===6?' sat':''}">${c.d}</span>
+      ${dots}${more}${payHtml}${noteHtml}
+    </button>`;
+  }).join('');
+
+  const sel = calSel || todayStr;
+  const selDate = new Date(sel + 'T00:00:00');
+  const selDow = selDate.getDay();
+  const selLs = lessonsOn(selDow, acs);
+  const selPays = acs.filter(a => a.payDay && Number(a.payDay) === selDate.getDate());
+  const selNote = S.dateMemos[sel] || '';
+  const selHtml = `
+    <div class="sep"></div>
+    <h2>${selDate.getMonth()+1}월 ${selDate.getDate()}일 (${DOW[selDow]}) <span class="sub">${selLs.length? '수업 '+selLs.length+'개':'수업 없음'}</span></h2>
+    <div class="chips" style="margin-bottom:8px">
+      ${selLs.map(l => `<span class="chip" style="color:${kidColor(l.ac.kidId)}">🏫 ${esc(l.ac.name)} ${l.start}~${l.end}</span>`).join('') || `<span class="chip n">학원 없음 🎉</span>`}
+    </div>
+    ${selPays.length ? `<div class="chips" style="margin-bottom:8px">${selPays.map(a => `<span class="chip o">💳 ${esc(a.name)} ${fmtWon(a.fee)}원 (${esc(a.pay||'')})</span>`).join('')}</div>` : ''}
+    <textarea class="in" id="dateMemo" placeholder="이 날 메모 (예) 학원비 이체, 준비물 챙기기)">${esc(selNote)}</textarea>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn ghost sm" style="flex:1" data-act="clearDate">메모 지우기</button>
+      <button class="btn sm" style="flex:1" data-act="saveDate">메모 저장</button>
+    </div>`;
+
+  return `<section class="card">
+    <h2>📆 학원 캘린더 <span class="sub">배지 = 학원 수업</span></h2>
+    <div class="calhead">
+      <button class="navb" data-act="prevmonth">‹</button>
+      <span class="m">${y}년 ${m+1}월</span>
+      <button class="navb" data-act="nextmonth">›</button>
+    </div>
+    <div class="cal">
+      ${['일','월','화','수','목','금','토'].map((w,i)=>`<div class="cw${i===0?' sun':i===6?' sat':''}">${w}</div>`).join('')}
+      ${cellHtml}
+    </div>
+    <div class="muted" style="margin-top:8px">💳 표시 = 학원비 결제일 · 날짜를 누르면 메모를 쓸 수 있어요</div>
+    ${selHtml}
+  </section>`;
+}
+
+/* ============================================================
+   📝 메모장
+   ============================================================ */
+function memoTab(){
+  const notes = S.notes.slice().sort((a,b) => (b.at||0) - (a.at||0));
+  const list = notes.length ? notes.map(n => {
+    const d = new Date(n.at || Date.now());
+    const when = (d.getMonth()+1) + '/' + d.getDate() + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+    return `<div class="acard" style="--c:#FFC38F">
+      <i class="bar" style="background:#FFC38F"></i>
+      <div class="top"><div class="nm" style="font-size:13.5px;white-space:normal">${esc(n.text)}</div>
+        <button class="btn danger sm" data-act="delnote" data-id="${n.id}">삭제</button></div>
+      <div class="muted" style="margin-top:4px">${when}</div>
+    </div>`;
+  }).join('') : `<div class="empty"><span class="big">📝</span>아직 메모가 없어요<br>학원비 낼 날, 준비물처럼 생각날 때 적어 두세요</div>`;
+  return `<section class="card">
+    <h2>📝 메모장</h2>
+    <textarea class="in" id="noteText" placeholder="예) 다음 주 영어학원 숙제 검사 · 수학 교재 사기"></textarea>
+    <button class="btn wide" style="margin-top:8px" data-act="addnote">메모 추가</button>
+  </section>
+  ${list ? `<div class="aclisthead"><span class="t">📌 저장된 메모 ${notes.length}개</span></div>` : ''}
+  ${list}`;
+}
+
+/* ============================================================
+   📊 내 통계
+   ============================================================ */
+function statsTab(){
+  const ks = activeKids();
+  const list = visibleAcs();
+  const totalFee = list.reduce((s,a) => s + (Number(a.fee)||0), 0);
+  const totalH = list.reduce((s,a) => s + durationHours(a), 0);
+  const count = list.reduce((s,a) => s + (a.days||[]).length, 0);
+  const perKid = ks.map(k => {
+    const ls = acsOf(k.id);
+    return {
+      k, fee: ls.reduce((s,a)=>s+(Number(a.fee)||0),0),
+      h: ls.reduce((s,a)=>s+durationHours(a),0),
+      n: ls.length
+    };
+  });
+  const byDow = [1,2,3,4,5,6,0].map(d => {
+    const ls = lessonsOn(d, list);
+    return { d, h: ls.reduce((s,l) => s + Math.max(0,((toMin(l.end)||0)-(toMin(l.start)||0))/60), 0), n: ls.length };
+  });
+  const maxH = Math.max(1, ...byDow.map(x => x.h));
+  const bars = byDow.map(x => `<div class="b">
+      <em>${x.h ? x.h.toFixed(1) : ''}</em>
+      <i style="height:${Math.max(4, (x.h/maxH)*100)}%"></i>
+      <span>${DOW[x.d]}</span>
+    </div>`).join('');
+  const kidRows = perKid.map(p => `<div class="zrow">
+      <span style="width:9px;height:9px;border-radius:50%;background:${p.k.color};display:inline-block"></span>
+      <span class="nm">${esc(p.k.name)} <span class="muted">(${p.n}곳)</span></span>
+      <span class="money">💰 ${fmtWon(p.fee)}원 · 주 ${p.h.toFixed(1)}시간</span>
+    </div>`).join('');
+  const acRows = list.length ? list.map(a => `<div class="zrow">
+      <span style="width:9px;height:9px;border-radius:50%;background:${kidColor(a.kidId)};display:inline-block"></span>
+      <span class="nm">${esc(a.name)} <span class="muted">· ${esc(kidName(a.kidId))}</span></span>
+      <span class="money">${fmtWon(a.fee)}원 · 주 ${durationHours(a).toFixed(1)}시간</span>
+    </div>`).join('') : '<div class="muted">등록된 학원이 없어요</div>';
+
+  return `<section class="card">
+    <h2>📊 내 통계 <span class="sub">${S.ui.all?'모두 보기 합계':esc((kidOf(S.ui.kid)||{}).name||'')+' 기준'}</span></h2>
+    <div class="stat">
+      <div class="box"><div class="v">${fmtWon(totalFee)}<span style="font-size:12px">원</span></div><div class="l">월 학원비</div></div>
+      <div class="box"><div class="v">${totalH.toFixed(1)}<span style="font-size:12px">시간</span></div><div class="l">주간 수업</div></div>
+    </div>
+    <div class="stat">
+      <div class="box"><div class="v">${count}<span style="font-size:12px">회</span></div><div class="l">주간 수업 횟수</div></div>
+      <div class="box"><div class="v">${list.length}<span style="font-size:12px">곳</span></div><div class="l">다니는 학원</div></div>
+    </div>
+  </section>
+  <section class="card">
+    <h2>📅 요일별 수업 시간</h2>
+    <div class="bars">${bars}</div>
+    <div class="muted" style="margin-top:10px;text-align:center">막대 위 숫자는 시간(h)이에요</div>
+  </section>
+  <section class="card">
+    <h2>👧 아이별</h2>
+    ${kidRows || '<div class="muted">아이가 없어요</div>'}
+  </section>
+  <section class="card">
+    <h2>🏫 학원별</h2>
+    ${acRows}
+  </section>`;
+}
+
+/* ============================================================
+   ❓ 도움말
+   ============================================================ */
+function helpTab(){
+  const syncMsg = SYNC.ready
+    ? '☁️ 동기화 켜짐 · 가족 폰과 같은 스케줄을 보고 있어요'
+    : '지금은 이 기기에만 저장돼요 (다른 폰과 함께 보려면 아래에서 동기화를 켜 주세요)';
+  return `<section class="card">
+    <h2>📱 폰 홈 화면에 추가하기</h2>
+    <div class="hitem"><span class="n">1</span><div class="tx"><b>안드로이드(크롬)</b> — 오른쪽 위 <b>⋮</b> → <b>홈 화면에 추가</b> → 추가</div></div>
+    <div class="hitem"><span class="n">2</span><div class="tx"><b>아이폰(사파리)</b> — 아래 <b>공유(□↑)</b> → <b>홈 화면에 추가</b> → 추가</div></div>
+    <div class="hitem"><span class="n">3</span><div class="tx">홈 화면의 <b>🎒 학원 스케줄</b> 아이콘을 누르면 앱처럼 열려요</div></div>
+  </section>
+  <section class="card">
+    <h2>🗂 사용법</h2>
+    <div class="hitem"><span class="n">1</span><div class="tx"><b>🏫 학원</b> 탭에서 <b>+ 학원 추가</b>로 학원·요일·시간·학원비·셔틀을 넣어요</div></div>
+    <div class="hitem"><span class="n">2</span><div class="tx"><b>📅 시간표</b>에서 오늘 다음 일정과 주간 표(주말 보기·시간 범위 조절)를 봐요</div></div>
+    <div class="hitem"><span class="n">3</span><div class="tx"><b>👥 모두 보기</b>를 켜면 윤·봄 일정이 겹칠 때 <b>겹침</b> 표시가 나와요</div></div>
+    <div class="hitem"><span class="n">4</span><div class="tx"><b>📆 캘린더</b>에서 매월 학원비 결제일과 수업을 보고 날짜별 메모를 남겨요</div></div>
+    <div class="hitem"><span class="n">5</span><div class="tx"><b>📌 요일별 준비물</b>은 시간표 탭 아래에서 요일마다 적어 둘 수 있어요</div></div>
+  </section>
+  <section class="card">
+    <h2>🏫 하교 시간</h2>
+    <div class="hitem"><span class="n">·</span><div class="tx"><b>📅 시간표</b> 탭 맨 아래 <b>🏫 하교 시간</b>에서 아이별 요일별 하교 시간을 넣으면 시간표에 초록 배지로 표시돼요</div></div>
+  </section>
+  <section class="card">
+    <h2>☁️ 가족 폰과 함께 쓰기</h2>
+    <div class="syncbox">
+      <div class="muted">같은 스케줄을 여러 폰에서 보려면 <b>가족 암호</b>를 한 번만 넣어 주세요. 이 기기에서는 기억해요.</div>
+      <div style="display:flex;gap:6px;margin-top:9px">
+        <input class="in sm" id="syncPw" type="password" inputmode="text" placeholder="가족 암호" autocomplete="current-password" style="flex:1">
+        <button class="btn sm" data-act="sync">동기화 켜기</button>
+      </div>
+      <div class="st" id="syncSt">${esc(syncMsg)}</div>
+      ${SYNC.ready ? `<button class="btn ghost sm" style="margin-top:8px" data-act="syncstop">이 기기만 쓰기</button>` : ''}
+    </div>
+  </section>
+  <section class="card">
+    <h2>💾 내 데이터</h2>
+    <div class="hitem"><span class="n">·</span><div class="tx">스케줄은 이 폰(<b>localStorage</b>)에 먼저 저장되고, 동기화를 켜면 가족 계정의 <b>학원 전용 칸</b>에 함께 저장돼요</div></div>
+    <div class="hitem"><span class="n">·</span><div class="tx">폰을 바꾸기 전에는 <b>동기화 켜기</b>를 해 두면 새 폰에서 그대로 볼 수 있어요</div></div>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="btn ghost sm" style="flex:1" data-act="export">데이터 복사</button>
+      <button class="btn danger sm" style="flex:1" data-act="reset">처음부터 다시</button>
+    </div>
+  </section>
+  <div class="muted" style="text-align:center;padding:4px 0 10px">🎒 윤봄 학원 스케줄 · 주아체 · 만든 날 2026.11.27</div>`;
+}
+
+/* ============================================================
+   render / events
+   ============================================================ */
+function render(){
+  renderHeader();
+  const m = $('#main');
+  const t = S.ui.tab;
+  if(t === 'timetable') m.innerHTML = todayCard() + weekCard();
+  else if(t === 'academy') m.innerHTML = academyTab();
+  else if(t === 'calendar') m.innerHTML = calendarTab();
+  else if(t === 'memo') m.innerHTML = memoTab();
+  else if(t === 'stats') m.innerHTML = statsTab();
+  else m.innerHTML = helpTab();
+  window.scrollTo({ top: 0 });
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]');
+  if(!b) return;
+  const act = b.dataset.act, id = b.dataset.id;
+
+  if(act === 'tab'){ S.ui.tab = id; save(true); render(); return; }
+  if(act === 'kid'){ S.ui.all = false; S.ui.kid = id; save(true); render(); return; }
+  if(act === 'all'){
+    S.ui.all = !S.ui.all;
+    if(!S.ui.all && !S.kids.find(k => k.id === S.ui.kid)) S.ui.kid = (S.kids[0]||{}).id;
+    save(true); render(); return;
+  }
+  if(act === 'weekend'){ S.ui.weekend = !S.ui.weekend; save(true); render(); return; }
+  if(act === 'distoggle'){ S.ui.disOpen = !S.ui.disOpen; save(true); render(); return; }
+  if(act === 'prevmonth'){ const mi = monthInfo(); calMonth = { y: mi.m === 0 ? mi.y-1 : mi.y, m: mi.m === 0 ? 11 : mi.m-1 }; render(); return; }
+  if(act === 'nextmonth'){ const mi = monthInfo(); calMonth = { y: mi.m === 11 ? mi.y+1 : mi.y, m: mi.m === 11 ? 0 : mi.m+1 }; render(); return; }
+  if(act === 'date'){ calSel = id; render(); return; }
+  if(act === 'toggleform'){
+    if(form.open){ form = { open:false, id:null, days:[], draft:null }; }
+    else openAcForm(null);
+    render(); return;
+  }
+  if(act === 'closeform'){ form = { open:false, id:null, days:[], draft:null }; render(); return; }
+  if(act === 'editac'){ const ac = S.academies.find(x => x.id === id); if(!ac) return; openAcForm(ac); S.ui.tab = 'academy'; render(); return; }
+  if(act === 'delac'){
+    const ac = S.academies.find(x => x.id === id); if(!ac) return;
+    if(confirm('“' + ac.name + '” 을(를) 지울까요?')){
+      S.academies = S.academies.filter(x => x.id !== id);
+      S.updatedAt = Date.now(); save(); render(); toast('학원을 지웠어요');
+    }
+    return;
+  }
+  if(act === 'sample'){ sampleData(); return; }
+  if(act === 'saveac'){ saveAcForm(); return; }
+  if(act === 'fday'){
+    const n = Number(id);
+    if(form.days.includes(n)) form.days = form.days.filter(x => x !== n);
+    else form.days.push(n);
+    collectForm();
+    render(); return;
+  }
+  if(act === 'ftr'){
+    collectForm();
+    form.draft.transport = form.draft.transport || {};
+    form.draft.transport.type = id;
+    render(); return;
+  }
+  if(act === 'addkid'){ openKidModal(null); return; }
+  if(act === 'editkid'){ openKidModal(kidOf(id)); return; }
+  if(act === 'delkid'){
+    const k = kidOf(id); if(!k) return;
+    if(S.kids.length <= 1){ toast('아이는 최소 한 명 있어야 해요'); return; }
+    if(confirm('“' + k.name + '” 과(와) 그 아이의 학원 기록을 지울까요?')){
+      S.kids = S.kids.filter(x => x.id !== id);
+      S.academies = S.academies.filter(a => a.kidId !== id);
+      delete S.dismissal[id]; delete S.dayMemos[id];
+      if(S.ui.kid === id) S.ui.kid = S.kids[0].id;
+      closeModal(); S.updatedAt = Date.now(); save(); render(); toast('아이를 지웠어요');
+    }
+    return;
+  }
+  if(act === 'savekid'){
+    const nm = (document.getElementById('m-name').value || '').trim();
+    const gr = (document.getElementById('m-grade').value || '').trim();
+    if(!nm){ toast('이름을 넣어 주세요'); return; }
+    const editing = document.getElementById('m-id').value;
+    if(editing){
+      const k = kidOf(editing);
+      if(k){ k.name = nm; k.grade = gr; }
+    }else{
+      const palette = ['#F2705E','#4E9BE8','#7BB661','#C08BE0','#E8A33D'];
+      S.kids.push({ id: uid(), name: nm, grade: gr, color: palette[S.kids.length % palette.length] });
+    }
+    closeModal(); S.updatedAt = Date.now(); save(); render(); toast('저장했어요');
+    return;
+  }
+  if(act === 'closeModal'){ closeModal(); return; }
+  if(act === 'addnote'){
+    const el = document.getElementById('noteText');
+    const tx = (el && el.value || '').trim();
+    if(!tx){ toast('메모를 적어 주세요'); return; }
+    S.notes.push({ id: uid(), text: tx, at: Date.now() });
+    S.updatedAt = Date.now(); save(); render(); toast('메모를 저장했어요');
+    return;
+  }
+  if(act === 'delnote'){
+    S.notes = S.notes.filter(n => n.id !== id);
+    S.updatedAt = Date.now(); save(); render(); return;
+  }
+  if(act === 'saveDate'){
+    const el = document.getElementById('dateMemo');
+    const ds = calSel || ymd(new Date());
+    const v = (el && el.value || '').trim();
+    if(v) S.dateMemos[ds] = v; else delete S.dateMemos[ds];
+    S.updatedAt = Date.now(); save(); render(); toast(v ? '메모를 저장했어요' : '메모를 지웠어요');
+    return;
+  }
+  if(act === 'clearDate'){
+    const ds = calSel || ymd(new Date());
+    delete S.dateMemos[ds];
+    S.updatedAt = Date.now(); save(); render(); return;
+  }
+  if(act === 'sync'){
+    const pw = (document.getElementById('syncPw') || {}).value || '';
+    syncStart(pw);
+    return;
+  }
+  if(act === 'syncstop'){ syncStop(); return; }
+  if(act === 'export'){
+    const txt = JSON.stringify(S, null, 2);
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(() => toast('데이터를 복사했어요'), () => toast('복사가 안 됐어요'));
+    }else{
+      toast('이 브라우저에서는 복사가 안 돼요');
+    }
+    return;
+  }
+  if(act === 'reset'){
+    if(confirm('이 기기의 스케줄을 처음 상태로 되돌릴까요? (학원·메모 모두 지워져요)')){
+      S = defState(); save(); render(); toast('처음 상태로 돌아갔어요');
+    }
+    return;
+  }
+});
+
+document.addEventListener('change', e => {
+  const t = e.target;
+  if(t.id === 'selFrom' || t.id === 'selTo'){
+    const f = Number(document.getElementById('selFrom').value);
+    let to = Number(document.getElementById('selTo').value);
+    if(to <= f) to = Math.min(24, f + 1);
+    S.ui.from = f; S.ui.to = to; save(true); render(); return;
+  }
+  if(t.id === 'f-kid' || t.id === 'f-pay' || t.id === 'f-day' || t.id === 'f-name' ||
+     t.id === 'f-fee' || t.id === 'f-memo' || t.id === 'f-dep' || t.id === 'f-arr' ||
+     t.id === 'f-from' || t.id === 'f-to'){
+    collectForm(); return;
+  }
+  if(t.dataset && t.dataset.daymemo){
+    const [kidId, d] = t.dataset.daymemo.split('|');
+    S.dayMemos[kidId] = S.dayMemos[kidId] || {};
+    const v = (t.value || '').trim();
+    if(v) S.dayMemos[kidId][d] = v; else delete S.dayMemos[kidId][d];
+    S.updatedAt = Date.now(); save(); toast('메모를 저장했어요');
+    return;
+  }
+  if(t.dataset && t.dataset.dis){
+    const [kidId, d] = t.dataset.dis.split('|');
+    S.dismissal[kidId] = S.dismissal[kidId] || {};
+    const v = t.value || '';
+    if(v) S.dismissal[kidId][d] = v; else delete S.dismissal[kidId][d];
+    S.updatedAt = Date.now(); save(); toast('하교 시간을 저장했어요');
+    return;
+  }
+});
+
+/* ----- kid modal ----- */
+function openKidModal(k){
+  const sheet = $('#sheet');
+  sheet.innerHTML = `<h3>${k ? '✏️ 아이 정보 고치기' : '＋ 아이 추가'}</h3>
+    <input type="hidden" id="m-id" value="${k ? k.id : ''}">
+    <div class="frow"><span class="flabel">이름</span>
+      <input class="in" id="m-name" value="${k ? esc(k.name) : ''}" placeholder="예) 윤"></div>
+    <div class="frow"><span class="flabel">학년</span>
+      <input class="in" id="m-grade" value="${k ? esc(k.grade||'') : ''}" placeholder="예) 초5"></div>
+    <div class="factions">
+      ${k ? `<button class="btn danger" data-act="delkid" data-id="${k.id}">삭제</button>` : ''}
+      <button class="btn ghost" data-act="closeModal">취소</button>
+      <button class="btn" data-act="savekid">저장</button>
+    </div>`;
+  $('#modal').classList.remove('hidden');
+}
+function closeModal(){ $('#modal').classList.add('hidden'); $('#sheet').innerHTML = ''; }
+$('#modal').addEventListener('click', e => { if(e.target.id === 'modal') closeModal(); });
+
+/* ---------------- boot ---------------- */
+load();
+S.ui.tab = 'timetable';   // 앱을 열면 항상 시간표(오늘)부터 보여 줍니다
+render();
+// 동기화를 켜 두었던 기기라면, 저장된 로그인으로 조용히 다시 연결합니다
+if(SYNC.on && location.protocol.startsWith('http')) syncResume();
+window.addEventListener('beforeunload', () => { try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }catch(e){} });
+</script>
+</body>
+</html>
